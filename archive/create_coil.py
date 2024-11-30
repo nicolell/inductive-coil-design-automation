@@ -1,5 +1,6 @@
-from coil_util import *
+from src.coil_util import *
 
+# creates coil starting from the inside, might not ensure the exact outer diameter given
 
 def make_full_turns(start_x, start_y, diameter, size, spacing, turns, adhere_strictly=True):
 	text = initialize_file()
@@ -116,17 +117,21 @@ def square_spiral(start_x, start_y, diameter=10, size=1.27, drill=0.5, spacing=1
 	text, lines = make_partial_turns(text=text, x=x, y=y, offset=offset, spacing=spacing, lines=lines, turns=turns, line_width=size, layer=layers[0])
 
 	# add pinheader at the end point of the coil
-	_, _, pin_x, pin_y = lines[-1]
+	_, _, _, pin_y = lines[-1]
+	pin_x, _, _, _ = lines[-4]
 	text = make_pinheader(text, pin_x, pin_y, layer=layers[0])
 	# connect bottom layer to via and pinheader
-	text = make_line(text, via_x, via_y, pin_x - 2.54, via_y, size, layer=layers[-1])
-	text = make_line(text, pin_x - 2.54, via_y, pin_x - 2.54, pin_y, size, layer=layers[-1])
+	#text = make_line(text, via_x, via_y, pin_x - 2.54, via_y, size, layer=layers[-1])
+	#text = make_line(text, pin_x - 2.54, via_y, pin_x - 2.54, pin_y, size, layer=layers[-1])
+	text = make_line(text, via_x, via_y, via_x, pin_y, size, layer=layers[-1])
+	text = make_line(text, via_x, pin_y, pin_x, pin_y, size, layer=layers[-1])
+	
 	return text
 
 
 if __name__ == '__main__':
     #text = initialize_file()
-	NAME = 'results/TEST4'
+	NAME = '../results/TEST3'
 	start_x = 100
 	start_y = 100
     
