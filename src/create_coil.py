@@ -114,9 +114,9 @@ def make_partial_turns(text, x, y, offset, spacing, lines, turns, line_width, la
 		final_y = y #- offset * frac_turn
 		last_dir = 1 # 0 for up/down
 	else:
-		text = make_line(text, x, y, x - offset * frac_turn, y, line_width, layer)
-		lines.append((x, y, x - offset * frac_turn, y))
-		final_x = x - offset * frac_turn
+		text = make_line(text, x, y, x + offset * frac_turn, y, line_width, layer)
+		lines.append((x, y, x + offset * frac_turn, y))
+		final_x = x + offset * frac_turn
 		final_y = y
 		last_dir = 1
 

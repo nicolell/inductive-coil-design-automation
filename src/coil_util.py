@@ -95,6 +95,23 @@ def make_line(text, start_x, start_y, end_x, end_y, line_width=1.27, layer="F.Cu
 	)
 """
     return text + seg
+
+def make_arc(text, start, mid, stop, line_width=1.27, layer="F.Cu"):
+	start_x, start_y = start
+	mid_x, mid_y = mid
+	stop_x, stop_y = stop
+	seg = f"""(gr_arc
+		(start {start_x} {start_y})
+		(mid {mid_x} {mid_y})
+		(end {stop_x} {stop_y})
+		(stroke
+			(width {line_width})
+			(type default)
+		)
+		(layer "{layer}")
+	)
+	"""
+	return text + seg
     
 def make_via(text, x, y, width=1.27, drill=0.5, layers=None):
 	if layers is None:
