@@ -22,107 +22,104 @@ class Circle_Coil(Coil):
         return self.text
 
     def make_full_turns(self, layer_index=0, clockwise=True):
-        radius = self.diameter / 2 - self.turns * self.size - (self.turns - 1) * self.spacing
+        center_x = self.x
+        center_y = self.y
+        final_x = center_x
+        final_y = center_y
+
+        
+        
         offset = self.spacing + self.size
-        start_x = radius
-        start_y = 0
+        #center_x = radius + center_x
+        #center_y = center_y
+        frac_turn = self.turns - int(self.turns)
+        diameter = self.diameter
+        if frac_turn !=  0:
+            print("hi")
+            diameter -= offset
+        radius = diameter/ 2 - offset/2#- self.turns * self.size - (self.turns - 1) * self.spacing
+        
+        print(radius)
         # Do all full turns
         m = -1 if layer_index % 2 != 0 else 1
         m *= 1 if clockwise else -1
+        
         for turn in range(int(self.turns)):
-            if not bool(m +1):
-
-                self.make_arc(start=(radius, 0), mid=(0, - m * radius), stop=(-radius, 0))
-                self.make_arc(start=(-radius, 0), mid=(offset/2, m * (radius + offset/2)), stop=(radius + offset, 0))
+            if radius <= offset:
+                print("radius too small")
+                break
+            if not bool(m + 1):
+                self.make_arc(start=(radius + center_x, center_y), 
+                            mid=(center_x, center_y - m * radius), 
+                            stop=(-radius + center_x, center_y))
+                self.make_arc(start=(-radius + center_x, center_y), 
+                            mid=(offset / 2 + center_x, m * (radius + offset / 2) + center_y), 
+                            stop=(radius + offset + center_x, center_y))
             else:
-                
-                self.make_arc(start=(-radius, 0), mid=(0, - m * radius), stop=(radius, 0))
-                self.make_arc(start=(radius + offset, 0), mid=(offset/2, m * (radius + offset/2)), stop=(-radius, 0))
-            radius += offset
-        final_x = radius
-        final_y = 0
+                self.make_arc(start=(-radius + center_x, center_y), 
+                            mid=(center_x, center_y - m * radius), 
+                            stop=(radius + center_x, center_y))
+                self.make_arc(start=(radius + offset + center_x, center_y), 
+                            mid=(offset / 2 + center_x, m * (radius + offset / 2) + center_y), 
+                            stop=(-radius + center_x, center_y))
+            radius -= offset
 
-        #print("inner diameter:", round(inner_diam,2))
+        final_x = radius - center_x
+        final_y = center_y
+
         return self.lines, offset, final_x, final_y
 
 
-    def make_partial_turns(self):
+    def make_partial_turns(self, layer_index=0, clockwise=True):
         # <=1 turn -> length of segment is at most diameter
             # Handle any partial turn if needed
         frac_turn = self.turns - int(self.turns)
         initial_offset = self.diameter
         offset = self.diameter
-        x = self.x
-        y = self.y
+        center_x = self.x + self.diameter / 2 + self.size
+        center_y = self.y
         final_x = self.x
         final_y = self.y
-        if frac_turn >= 0.75: # third line has length diameter
-            # first line should be smaller
-            offset -= self.spacing + self.size
-            initial_offset = offset - (self.spacing + self.size)
-            self.text = make_line(self.text, x, y, x + offset, y, self.size, self.layers[0])  # Go right
-            #lines.append((x, y, x + offset, y))
-            x += offset  # Update x to end of this line
-
-            self.text = make_line(self.text, x, y, x, y + offset, self.size, self.layers[0])  # Go up
-            self.lines.append((x, y, x, y + offset))
-            y += offset  # Update y to end of this line
-
-            offset += self.spacing + self.size  # Increase offset to add spacing
-            self.text = make_line(self.text, x, y, x - offset, y, self.size, self.layers[0])  # Go left
-            self.lines.append((x, y, x - offset, y))
-            x -= offset  # Update x to end of this line
-
-            frac_turn -= 0.75
-            #print(frac_turn)
-            #print(offset * frac_turn)
-            self.text = make_line(self.text, x, y, x, y - offset * frac_turn, self.size, self.layers[0])
-            final_x = x
-            final_y = y - offset * frac_turn
-            self.lines.append((x, y, x, y - offset * frac_turn))
-            last_dir = 0 # 0 for up/down
-
-        elif frac_turn >= 0.5: # first, second line have length diameter
-            # use full offset for partial turn
-            initial_offset = offset - (self.spacing + self.size)
-            self.text = make_line(self.text, x, y, x + offset, y, self.size, self.layers[0])  # Go right
-            #lines.append((x, y, x + offset, y))
-            x += offset  # Update x to end of this line
-
-            self.text = make_line(self.text, x, y, x, y + offset, self.size, self.layers[0])  # Go up
-            self.lines.append((x, y, x, y + offset))
-            y += offset  # Update y to end of this line
-
-            offset += (self.spacing + self.size)  # Increase offset to add spacing
-            frac_turn -= 0.5
-            self.text = make_line(self.text, x, y, x - offset * frac_turn, y, self.size, self.layers[0])  # Go left
-            self.lines.append((x, y, x - offset * frac_turn, y))
-            x -= offset * frac_turn  # Update x to end of this line
-            final_x = x
-            final_y = y 
-            last_dir = 0 # 0 for up/down
-        elif frac_turn >= 0.25: # first line has length diameter
-            # use full offset for partial turn
-            initial_offset = offset - (self.spacing + self.size)
-            self.text = make_line(self.text, x, y, x + offset, y, self.size, self.layers[0])  # Go right
-            #lines.append((x, y, x + offset, y))
-            x += offset  # Update x to end of this line
-
-            frac_turn -= 0.25
-            self.text = make_line(self.text, x, y, x, y + offset * frac_turn, self.size, self.layers[0])  # Go up
-            self.lines.append((x, y, x, y + offset * frac_turn))
-            y += offset * frac_turn  # Update y to end of this line
-
-
-            final_x = x
-            final_y = y #- offset * frac_turn
-            last_dir = 1 # 0 for up/down
-        else:
-            self.text = make_line(self.text, self.x, self.y, self.x + self.diameter * frac_turn, self.y, self.size, self.layers[0])
-            self.lines.append((self.x, self.y, self.x + self.diameter * frac_turn, self.y))
-            final_x = self.x + self.diameter * frac_turn
-            final_y = self.y
+        radius = self.diameter/ 2
+        center_x -= radius + self.size
+        m = -1 if layer_index % 2 != 0 else 1
+        m *= 1 if clockwise else -1
+        if frac_turn == 1: # third line has length diameter
+            # todo this currently performs a full turn
+            radius += self.size 
+            offset = self.size + self.spacing
+            if not bool(m + 1):
+                self.make_arc(start=(radius + center_x, center_y), 
+                            mid=(center_x, center_y - m * radius ), 
+                            stop=(-radius + center_x, center_y))
+                self.make_arc(start=(-radius + center_x, center_y), 
+                            mid=(offset / 2 + center_x, m * (radius+ offset / 2) + center_y), 
+                            stop=(radius + offset + center_x, center_y))
+            else:
+                self.make_arc(start=(-radius+ center_x, center_y), 
+                            mid=(center_x, center_y - m * radius ), 
+                            stop=(radius + center_x, center_y))
+                self.make_arc(start=(radius  + offset + center_x, center_y), 
+                            mid=(offset / 2 + center_x, m * (radius  + offset / 2) + center_y), 
+                            stop=(-radius  + center_x, center_y))
+            last_dir = 0
+        elif frac_turn == 0.5:
+            # todo this currently performs half a turn
+            radius += self.size 
+            offset = self.size + self.spacing
+            if not bool(m + 1):
+                self.make_arc(start=(radius + center_x, center_y), 
+                            mid=(center_x, center_y - m * radius ), 
+                            stop=(-radius + center_x, center_y))
+            else:
+                self.make_arc(start=(-radius+ center_x, center_y), 
+                            mid=(center_x, center_y - m * radius ), 
+                            stop=(radius + center_x, center_y))
             last_dir = 1
+        else: 
+            # TODO
+            last_dir = 1
+            pass
 
         return self.text, self.lines, initial_offset, final_x, final_y, last_dir
 
@@ -149,8 +146,8 @@ class Circle_Coil(Coil):
             text = make_line(text, x_start, y_start, x_end, y_end, self.size, self.layers[0])
 
         # add via in the origin of the coil
-        _, _, via_x, via_y = lines[-1]
-
+        via_x, via_y = final_x, final_y
+        #print(via_x, via_y)
         text = make_via(text,via_x, via_y, self.size, self.drill, self.layers)
 
 
@@ -193,7 +190,7 @@ class Circle_Coil(Coil):
 
 
 if __name__ == '__main__':
-    NAME = '../results/TEST6'
-    square = Circle_Coil(turns=5)
+    NAME = '../results/TEST7'
+    square = Circle_Coil(turns=3.5, diameter=20)
     text = square.create_coil()
     print_to_file(outfile=NAME, text=text)
