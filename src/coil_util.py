@@ -129,15 +129,15 @@ def make_via(text, x, y, width=1.27, drill=0.5, layers=None):
 	return text + via
 
 
-def make_pinheader(text, x, y, layer="F.Cu"):
+def make_pinheader(text, x, y, layer="F.Cu", angle=0): # 90 is horizontal
 	pin = f"""(footprint "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
 		(layer "{layer}")
 		(uuid "6eb7a419-c70b-48ac-bdb9-ad2a813fb730")
-		(at {x} {y} -90)
+		(at {x} {y} -{angle})
 		(descr "Through hole straight pin header, 1x02, 2.54mm pitch, single row")
 		(tags "Through hole pin header THT 1x02 2.54mm single row")
 		(property "Reference" "REF**"
-			(at 2.54 -2.54 90)
+			(at 2.54 -2.54 {angle})
 			(layer "F.SilkS")
 			(uuid "0680d32b-a290-48eb-93ca-355456b61191")
 			(effects
@@ -148,7 +148,7 @@ def make_pinheader(text, x, y, layer="F.Cu"):
 			)
 		)
 		(property "Value" "PinHeader_1x02_P2.54mm_Vertical"
-			(at 0 4.87 90)
+			(at 0 4.87 {angle})
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "740ee695-8230-4635-945d-42ac37bfcb3c")
@@ -160,7 +160,7 @@ def make_pinheader(text, x, y, layer="F.Cu"):
 			)
 		)
 		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
-			(at 0 0 -90)
+			(at 0 0 -{angle})
 			(unlocked yes)
 			(layer "F.Fab")
 			(hide yes)
@@ -173,7 +173,7 @@ def make_pinheader(text, x, y, layer="F.Cu"):
 			)
 		)
 		(property "Datasheet" ""
-			(at 0 0 -90)
+			(at 0 0 -{angle})
 			(unlocked yes)
 			(layer "F.Fab")
 			(hide yes)
@@ -186,7 +186,7 @@ def make_pinheader(text, x, y, layer="F.Cu"):
 			)
 		)
 		(property "Description" ""
-			(at 0 0 -90)
+			(at 0 0 -{angle})
 			(unlocked yes)
 			(layer "F.Fab")
 			(hide yes)

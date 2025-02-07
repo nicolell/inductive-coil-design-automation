@@ -1,0 +1,494 @@
+from math import log, pi, sqrt
+import math
+import sys
+
+
+def main():
+    # some default values for a spiral inductor vaguely OK for Qi applications
+    innerDiameter = 27100; # microns
+    outerDiameter = 32000; # microns
+    segmentLength = 1000; # 1mm length in microns
+    turnsTotal = 9
+    trackWidth = 1270; # microns
+    trackGap = 1270; # microns
+                    # (((outerDiameter-innerDiameter)/2-(turnsTotal-1)*trackGap))/turnsTotal;
+
+    vertices = 0
+
+    # we now parse arguments parsed via the command line
+    if len(sys.argv) == 1:
+        printUsage()
+        sys.exit(0)
+
+    counter = 1
+    while counter < len(sys.argv):
+        if sys.argv[counter].startswith("-n"):
+            turnsTotal = float(sys.argv[counter + 1])
+            counter += 2
+        elif sys.argv[counter].startswith("-i"):
+            innerDiameter = int(sys.argv[counter + 1])
+            counter += 2
+        elif sys.argv[counter].startswith("-o"):
+            outerDiameter = int(sys.argv[counter + 1])
+            counter += 2
+        elif sys.argv[counter].startswith("-l"):
+            segmentLength = int(sys.argv[counter + 1])
+            counter += 2
+        elif sys.argv[counter].startswith("-w"):
+            trackWidth = int(sys.argv[counter + 1])
+            counter += 2
+        elif sys.argv[counter].startswith("-v"):
+            vertices = int(sys.argv[counter][2:])
+            if vertices in (1, 2):
+                print("Assuming inductor is helical.")
+                vertices = 0
+            counter += 1
+        elif sys.argv[counter].startswith("-g"):
+            trackGap = int(sys.argv[counter + 1])
+            counter += 1
+        else:
+            printUsage()
+            sys.exit(0)
+
+
+
+    # some basic preliminaries for all scenarios
+
+    #innerDiameter = outerDiameter - 2.0 * ((turnsTotal * (trackWidth + trackGap)) / (turnsTotal - 1)) + trackWidth
+    # startRadius = (innerDiameter + trackWidth)/2.0;
+    innerDiameter = outerDiameter - 2.0 * (turnsTotal * trackWidth + (turnsTotal - 1) * trackGap)
+
+    
+    startRadius = (innerDiameter)/2.0;
+
+    nextRadius = startRadius;
+
+    # now some preliminaries for heliical inductors
+    # we now sort out appropriate angular step sizes for the loops and
+    # the loop spacings based on the inner and outer dimensions given
+    theta = 0;
+    nextTheta = 0;
+
+    # we figure out the circumference, well, at least a reasonable
+    # approximation of a real number using the set of long integers
+    # circumference = pi * outerDiameter;
+
+    # we base segments per loop on the outermost loop circumference
+    segmentsPerLoop = pi*outerDiameter/segmentLength;
+    # we figure out a step size in radians to step around the spiral
+    # which is 2pi radians divided by number of segments
+    deltaTheta = (2.0 * pi)/segmentsPerLoop;
+
+    # we now define some flags
+    nextTurnPlease = False;
+
+    # none of the above prelimiaries are needed for n-gons
+
+    
+    # if trackgap not given, calculate an appropriate one
+
+    if not trackGap:
+        if (turnsTotal > 1): # the usual scenario
+
+            trackGap = ((outerDiameter - innerDiameter)/2.0 - (turnsTotal*trackWidth))/(turnsTotal-1); # nm
+
+        else: # stops a divide by zero error if only one loop requested
+
+            trackGap = (innerDiameter/2.0); # i.e. startRadius
+    
+
+
+
+    radiusIncrementPerTurn = (trackWidth+trackGap);
+    radiusIncrementPerSegment = radiusIncrementPerTurn/(segmentsPerLoop);
+
+    # we use x1,y1,x2,y2 as variables for the begining and end coords of line segments
+    x1 = 0;
+    y1 = 0;
+    x2 = 0;
+    y2 = 0;
+            # we use x1scales,y1scaled,x2scaled,y2scaled as variables for
+    # the beginning and end coords of scaled helical coil segments
+    # for capacitance length calculation
+    x1scaled = 0;
+    y1scaled = 0;
+    x2scaled = 0;
+    y2scaled = 0;
+
+    layerNumber = 15; # front for kicad
+
+    if vertices == 0:
+        moduleName = f"{turnsTotal}_turn_helical_inductor"
+    elif vertices == 3:
+        moduleName = f"{turnsTotal}_turn_triangular_inductor"
+    elif vertices == 4:
+        moduleName = f"{turnsTotal}_turn_square_inductor"
+    elif vertices == 5:
+        moduleName = f"{turnsTotal}_turn_pentagonal_inductor"
+    elif vertices == 6:
+        moduleName = f"{turnsTotal}_turn_hexagonal_inductor"
+    elif vertices == 7:
+        moduleName = f"{turnsTotal}_turn_heptagonal_inductor"
+    elif vertices == 8:
+        moduleName = f"{turnsTotal}_turn_octagonal_inductor"
+    elif vertices == 9:
+        moduleName = f"{turnsTotal}_turn_nonagonal_inductor"
+    elif vertices == 10:
+        moduleName = f"{turnsTotal}_turn_decagonal_inductor"
+    else:
+        moduleName = f"{turnsTotal}_turn_{vertices}_gon_inductor"
+
+
+    outputFileName = moduleName + ".mod";
+
+    print(f"Generating {turnsTotal} turn inductor:" +
+        outputFileName);
+
+    print(f"Using track gap of: {trackGap} microns.");
+    print(f"Using track width of: {trackWidth} microns.");
+
+    footprintOutput = open(outputFileName, 'w')
+
+    header_string = ""
+    header_string += (
+        "PCBNEW-LibModule-V1  mer 27 mar 2013 20:53:24 CET\n"
+        "Units mm\n"
+        "$INDEX\n"
+        f"{moduleName}\n"
+        "$EndINDEX\n"
+        f"$MODULE {moduleName}\n"
+        "Po 0 0 0 15 51534DFF 00000000 ~~\n"
+        f"Li {moduleName}\n"
+        f"Cd {moduleName}\n"
+        "Sc 0\n"
+        "AR\n"
+        "Op 0 0 0\n"
+        "T0 0 -4134 600 600 0 120 N V 21 N \"S***\"\n"
+    )
+
+    footprintOutput.write(header_string)
+
+    currentLoopStartX = 0
+    currentLoopStartY = 0
+
+    trackWidthMM = trackWidth / 1000.0
+    trackGapMM = trackGap / 1000.0
+
+    # we need to calculate the effective length of the distributed capacitor
+    cumulativeCapacitorLengthMM = 0.0
+
+    # and length of trace will allow coil resistance to be calculated
+    cumulativeCoilLengthMM = 0.0
+
+
+
+    # Extract integer and fractional parts of turnsTotal
+    fullTurns = int(turnsTotal)
+    fractionalTurn = turnsTotal - fullTurns
+
+    # Loop for full turns
+    for spiralCounter in range(fullTurns):
+        if vertices != 0:  # we are making an n-gon, as opposed to a helical coil
+            # the following if then else structure figures out a starting theta
+            # for the n-gon in an attempt to give an aesthetically pleasing coil
+            if (vertices % 2) == 1:
+                theta = (math.pi / (2 * vertices))
+            elif (vertices % 2) == 0:
+                theta = (math.pi / vertices)
+            else:
+                theta = 0.0
+
+            # we figure out the radius at a vertex using some trigonometry
+            nextRadius = startRadius / math.cos(math.pi / vertices) + (spiralCounter * (radiusIncrementPerTurn / math.cos(math.pi / vertices)))
+
+            # we step through, one vertex after another, until we complete a turn
+            for vertexCount in range(vertices):
+                if vertexCount < (vertices - 2):
+                    x1 = (nextRadius * math.cos(vertexCount * 2 * math.pi / vertices + theta)) / 1000.0
+                    y1 = (nextRadius * math.sin(vertexCount * 2 * math.pi / vertices + theta)) / 1000.0
+                    x2 = ((nextRadius * math.cos((vertexCount + 1) * 2 * math.pi / vertices + theta)) / 1000.0)
+                    y2 = ((nextRadius * math.sin((vertexCount + 1) * 2 * math.pi / vertices + theta)) / 1000.0)
+                elif vertexCount == (vertices - 2):
+                    x1 = (nextRadius * math.cos(vertexCount * 2 * math.pi / vertices + theta)) / 1000.0
+                    y1 = (nextRadius * math.sin(vertexCount * 2 * math.pi / vertices + theta)) / 1000.0
+                    x2 = ((nextRadius * math.cos((vertexCount + 1) * 2 * math.pi / vertices + theta)) / 1000.0)
+                    y2 = ((nextRadius * math.sin((vertexCount + 1) * 2 * math.pi / vertices + theta)) / 1000.0)
+                    # the second to last line segment making up the n-gon
+                    # need to be lengthened to allow the final segment of
+                    # of the current turn to finish where the next turn starts
+                    x2 = x1 + ((x2 - x1) * (calculateSegmentLength(x1, y1, x2, y2) + (radiusIncrementPerTurn / (math.sin(2.0 * math.pi / vertices) * 1000))) / calculateSegmentLength(x1, y1, x2, y2))
+                    y2 = y1 + ((y2 - y1) * (calculateSegmentLength(x1, y1, x2, y2) + (radiusIncrementPerTurn / (math.sin(2.0 * math.pi / vertices) * 1000))) / calculateSegmentLength(x1, y1, x2, y2))
+                else:  # last segment of current loop
+                    nextRadius = startRadius / math.cos(math.pi / vertices) + ((spiralCounter + 1) * (radiusIncrementPerTurn / math.cos(math.pi / vertices)))
+                    x1 = x2  # copy the previous coords
+                    y1 = y2  # copy the previous coords
+                    x2 = ((nextRadius * math.cos((vertexCount + 1) * 2 * math.pi / vertices + theta)) / 1000.0)
+                    y2 = ((nextRadius * math.sin((vertexCount + 1) * 2 * math.pi / vertices + theta)) / 1000.0)
+
+                # we only have capacitance between turns, so we stop
+                # summing capacitance length when generating the
+                # final turn, i.e. stop at (turnsTotal - 1)
+
+                if spiralCounter < (turnsTotal - 1):
+                    cumulativeCapacitorLengthMM += calculateSegmentLength(x1, y1, x2, y2) + ((radiusIncrementPerTurn / 1000.0) * math.tan(math.pi / vertices))
+
+                # we add the segment length to the total coil length
+                cumulativeCoilLengthMM += calculateSegmentLength(x1, y1, x2, y2)
+
+                # for gEDA we have to produce a pad description of the form
+                # Pad[X1 Y1 X2 Y2 Thickness Clearance Mask Name Number SFlags]
+
+                footprintOutput.write(f"DS {x1:.3f} {y1:.3f} {x2:.3f} {y2:.3f} ")
+                footprintOutput.write(f"{trackWidthMM:.3f} ")
+                footprintOutput.write(f"{layerNumber}\n")
+        # end n-gon IF statement 
+
+        elif vertices == 0:  # not an n-gon, it is a helical coil
+            while not nextTurnPlease:
+                nextTheta = theta + deltaTheta
+                nextRadius = startRadius + radiusIncrementPerSegment
+                # we figure out the coordinates in mm as double variables
+                # gEDA will recognise "XXX.XXmm" as mm
+                x1 = ((startRadius * math.cos(theta)) / 1000.0)
+                y1 = ((startRadius * math.sin(theta)) / 1000.0)
+                x2 = ((nextRadius * math.cos(nextTheta)) / 1000.0)
+                y2 = ((nextRadius * math.sin(nextTheta)) / 1000.0)
+
+                # we numerically integrate the length of the midline
+                # between turns, hence the use of the + (trackGap / 2.0)
+                # to establish the midline of the gap
+                x1scaled = ((startRadius + (trackGap / 2.0)) * math.cos(theta)) / 1000.0
+                y1scaled = ((startRadius + (trackGap / 2.0)) * math.sin(theta)) / 1000.0
+                x2scaled = ((nextRadius + (trackGap / 2.0)) * math.cos(nextTheta)) / 1000.0
+                y2scaled = ((nextRadius + (trackGap / 2.0)) * math.sin(nextTheta)) / 1000.0
+
+                # there is only capacitance between turns, so we stop summing
+                # capacitor length at (turnsTotal - 1)
+                if spiralCounter < (turnsTotal - 1):
+                    cumulativeCapacitorLengthMM += calculateSegmentLength(x1scaled, y1scaled, x2scaled, y2scaled)
+
+                # we add the segment length to the total coil length
+                cumulativeCoilLengthMM += calculateSegmentLength(x1, y1, x2, y2)
+
+                # for gEDA we have to produce a pad description of the form
+                # Pad[X1 Y1 X2 Y2 Thickness Clearance Mask Name Number SFlags]
+                # for kicad we have to produce
+                # a Draw Segment "DS" string of the form
+                # "DS x1 y1 x2 y2 thickness layer"
+                footprintOutput.write(f"DS {x1:.3f} {y1:.3f} {x2:.3f} {y2:.3f} ")
+                footprintOutput.write(f"{trackWidthMM:.3f} ")
+                footprintOutput.write(f"{layerNumber}\n")
+
+                startRadius = nextRadius
+                theta = nextTheta
+                if theta > (2 * math.pi):
+                    theta -= (2.0 * math.pi)
+                    nextTurnPlease = True
+
+            nextTurnPlease = False
+
+    # Handle the fractional turn
+    if fractionalTurn > 0:
+        if vertices != 0:  # n-gon case
+            # Calculate the angle for the fractional turn
+            fractionalAngle = fractionalTurn * 2 * math.pi
+
+            # Calculate the radius for the fractional turn
+            nextRadius = startRadius / math.cos(math.pi / vertices) + (fullTurns * (radiusIncrementPerTurn / math.cos(math.pi / vertices)))
+
+            # Calculate the number of vertices to cover the fractional angle
+            numVerticesFractional = int(fractionalAngle / (2 * math.pi / vertices))
+
+            # Draw the partial turn
+            for vertexCount in range(numVerticesFractional + 1):
+                x1 = (nextRadius * math.cos(vertexCount * 2 * math.pi / vertices + theta)) / 1000.0
+                y1 = (nextRadius * math.sin(vertexCount * 2 * math.pi / vertices + theta)) / 1000.0
+                x2 = ((nextRadius * math.cos((vertexCount + 1) * 2 * math.pi / vertices + theta)) / 1000.0)
+                y2 = ((nextRadius * math.sin((vertexCount + 1) * 2 * math.pi / vertices + theta)) / 1000.0)
+
+                # Add the segment length to the total coil length
+                cumulativeCoilLengthMM += calculateSegmentLength(x1, y1, x2, y2)
+
+                # Output the segment
+
+                footprintOutput.write(f"DS {x1:.3f} {y1:.3f} {x2:.3f} {y2:.3f} ")
+                footprintOutput.write(f"{trackWidthMM:.3f} ")
+                footprintOutput.write(f"{layerNumber}\n")
+
+        elif vertices == 0:  # helical coil case
+            # Calculate the angle for the fractional turn
+            fractionalAngle = fractionalTurn * 2 * math.pi
+
+            # Draw the partial turn
+            while theta < fractionalAngle:
+                nextTheta = theta + deltaTheta
+                nextRadius = startRadius + radiusIncrementPerSegment
+
+                x1 = ((startRadius * math.cos(theta)) / 1000.0)
+                y1 = ((startRadius * math.sin(theta)) / 1000.0)
+                x2 = ((nextRadius * math.cos(nextTheta)) / 1000.0)
+                y2 = ((nextRadius * math.sin(nextTheta)) / 1000.0)
+
+                # Add the segment length to the total coil length
+                cumulativeCoilLengthMM += calculateSegmentLength(x1, y1, x2, y2)
+
+                # Output the segment
+                footprintOutput.write(f"DS {x1:.3f} {y1:.3f} {x2:.3f} {y2:.3f} ")
+                footprintOutput.write(f"{trackWidthMM:.3f} ")
+                footprintOutput.write(f"{layerNumber}\n")
+
+                startRadius = nextRadius
+                theta = nextTheta
+
+
+
+
+
+    footprintOutput.write(f"$EndMODULE {moduleName}\n")
+
+    print(f"Outer diameter of coil (mm): {outerDiameter / 1000.0}")
+    print(f"Inner diameter of coil (mm): {innerDiameter / 1000.0}")
+    if vertices != 0:
+        print(f"Inductor has {vertices} vertices.")
+    else:
+        print("Inductor is helical")
+
+    print("Total coil length (mm): ", end="")
+    print(f"{cumulativeCoilLengthMM:.4f}")
+
+    print("DC resistance of coil assuming copper resistivity = 1.75E-8 ohm.m")
+    print("\t35.56 micron copper thickness: ", end="")
+    print(f"{1.75E-8 * (cumulativeCoilLengthMM / 1000.0) / ((trackWidthMM / 1000.0) * (3.556E-5)):.4f} ohm")
+    print("\t71.12 micron copper thickness: ", end="")
+    print(f"{1.75E-8 * (cumulativeCoilLengthMM / 1000.0) / ((trackWidthMM / 1000.0) * (7.112E-5)):.4f} ohm")
+
+    print("Total capacitor length (mm): ", end="")
+    print(f"{cumulativeCapacitorLengthMM:.4f}")
+
+    finalCapacitanceF = calculateCapacitance(trackGapMM, cumulativeCapacitorLengthMM)
+
+    print(f"Total calculated capacitance (F): {finalCapacitanceF}")
+    print("Total calculated capacitance (pF): ", end="")
+    print(f"{finalCapacitanceF * 1E12:.4f}")
+
+    # the following variables are used to calculate inductance
+    # using the "Greenhouse" equation for flat "pancake" inductors
+    # we set the default values to those needed for a helical coil
+    greenhouseC1 = 1.00  # Square 1.27, Hexagonal 1.09, Circle 1.00
+    greenhouseC2 = 2.46  # Square 2.07, Hexagonal 2.23, Circle 2.46
+    greenhouseC3 = 0.00  # Square 0.18, Hexagonal 0.00, Circle 0.00
+    greenhouseC4 = 0.20  # Square 0.13, Hexagonal 0.17, Circle 0.20
+
+    if vertices == 4:
+        greenhouseC1 = 1.27  # Square 1.27, Hexagonal 1.09, Circle 1.00
+        greenhouseC2 = 2.07  # Square 2.07, Hexagonal 2.23, Circle 2.46
+        greenhouseC3 = 0.18  # Square 0.18, Hexagonal 0.00, Circle 0.00
+        greenhouseC4 = 0.13  # Square 0.13, Hexagonal 0.17, Circle 0.20
+    elif vertices == 6:
+        greenhouseC1 = 1.09  # Square 1.27, Hexagonal 1.09, Circle 1.00
+        greenhouseC2 = 2.23  # Square 2.07, Hexagonal 2.23, Circle 2.46
+        greenhouseC3 = 0.00  # Square 0.18, Hexagonal 0.00, Circle 0.00
+        greenhouseC4 = 0.17  # Square 0.13, Hexagonal 0.17, Circle 0.20
+    elif vertices == 8:
+        greenhouseC1 = 1.07  # Square 1.27, Hexagonal 1.09, Circle 1.00
+        greenhouseC2 = 2.29  # Square 2.07, Hexagonal 2.23, Circle 2.46
+        greenhouseC3 = 0.00  # Square 0.18, Hexagonal 0.00, Circle 0.00
+        greenhouseC4 = 0.19  # Square 0.13, Hexagonal 0.17, Circle 0.20
+    elif vertices != 0:
+        print("Using inductance equation for circle due to a"
+            " lack of published parameters\nfor the inductance of "
+            f"{vertices} vertex inductors.")
+
+
+
+    finalInductanceH = calculateInductance(turnsTotal, innerDiameter, outerDiameter, greenhouseC1, greenhouseC2, greenhouseC3, greenhouseC4)
+
+    print(f"Calculated inductance (Henries): {finalInductanceH}")
+    print("Calculated inductance (uH): ", end="")
+    print(f"{finalInductanceH * 1_000_000:.4f}")
+    print("Calculated self resonant frequency (Hz): ", end="")
+    print(f"{calculateSelfResonance(finalInductanceH, finalCapacitanceF):.0f}")
+    print("Calculated self resonant frequency (MHz): ", end="")
+    print(f"{calculateSelfResonance(finalInductanceH, finalCapacitanceF) / 1E6:.4f}")
+
+    # and we close the footprint file before finishing up
+    footprintOutput.close()
+
+
+
+def calculateSelfResonance(inductanceHenries, capacitance):
+
+            # method employed described in http://dx.doi.org/10.4236/cs.2013.42032
+            # "Design and Optimization of Printed Circuit Board
+            # Inductors for Wireless Power Transfer System" by
+            # Ashraf B. Islam, Syed K. Islam, Fahmida S. Tulip
+            # Circuits and Systems, 2013, 4, 237-244
+
+    # we use frequency = 1/(2*pi*sqrt(LC)) 
+    return (1.0/(2.0*pi*sqrt(inductanceHenries*capacitance)));
+
+
+def calculateSegmentLength(xOne, yOne, xTwo, yTwo):
+
+    lengthSquared = ((xOne - xTwo) * (xOne - xTwo))+((yOne - yTwo) * (yOne - yTwo));
+    return sqrt(lengthSquared);
+
+
+def calculateCapacitance(trackGapMilliM, gapLengthMilliM):
+
+            # method employed described in http://dx.doi.org/10.4236/cs.2013.42032
+            # "Design and Optimization of Printed Circuit Board
+            # Inductors for Wireless Power Transfer System" by
+            # Ashraf B. Islam, Syed K. Islam, Fahmida S. Tulip
+            # Circuits and Systems, 2013, 4, 237-244
+    etaRC = 3.1; # solder mask relative permittivity a.k.a. dielectric constant
+    etaRS = 4.7; # approx, fibreglass relative permittivity (dielectric constant)
+            # etaRA = 1.006 for air at STP at ~ 0.9MHz
+    alpha = 0.9; # for FR4 coating
+    beta = 0.1; # for FR4 substrate	
+    eta0 = 8.854E-12; # dielectric constant of a vacuum	
+    copperThicknessM = 0.00003556; # in metres = 35.56 microns for 1oz/ft^2 copper
+    trackGapM = trackGapMilliM/1000.0; # convert mm to metres
+    gapLengthM = gapLengthMilliM/1000.0; # convert mm to metres
+    calculatedCapacitance = (alpha*etaRC + beta*etaRS)*eta0*copperThicknessM*gapLengthM/trackGapM;
+    # i.e. the formula for parallel plates of a capacitor
+    #            = (plateArea/gap)*dielectricConstantOfVacuum*relativePermittivity
+    return calculatedCapacitance;
+
+
+def calculateInductance(turns, dIn, dOut, c1, c2, c3, c4):
+
+    # method employed described in http://dx.doi.org/10.4236/cs.2013.42032
+    # "Design and Optimization of Printed Circuit Board
+    # Inductors for Wireless Power Transfer System" by
+    # Ashraf B. Islam, Syed K. Islam, Fahmida S. Tulip
+    # Circuits and Systems, 2013, 4, 237-244
+    dAvg = ((dOut + dIn)/1000000.0)/2.0; # convert distance in microns to metres
+    sigma = (dOut - dIn)/(1.0*(dOut + dIn)); # sigma = "coil fill ratio"
+    mu = 4*pi/10000000; # vacuum permeability = 4*pi * 10^(-7)
+    inductance = 0;
+    inductance = ((mu * turns * turns * dAvg * c1)/2.0)*(log(c2/sigma) + c3*sigma + c4*sigma*sigma);
+    return inductance; # in Henries (H)
+
+
+def printUsage():
+
+    print("\nUsage:\n\n\t" +
+        "java SpiralInductorFootprintGenerator -option value\n" +
+                    "\n\t\t-vN\texport an N-gonal inductor instead of default helical inductor\n" +
+        "\n\t\t\ti.e. -v3 for triangle, -v4 for square, -v6 for hexagon\n" + 
+                    "\n\t\t-i long\t inner diameter of coil in microns\n" +
+                    "\n\t\t-o long\t outer diameter of coil in microns\n" +
+                    "\n\t\t-w long\t track width in microns\n" +
+                    "\n\t\t-n long\t number of turns\n" +
+        "\n\t\t-l long\t length of segment used to approximate circular arc in microns\n" +
+        "\n\t\t-h\t prints this\n\n" +
+        "Example usage:\n\n\t" +
+        "java SpiralInductorFootprintGenerator -n 40 -i 15000 -o 50000 -w 250 -l 3000\n\n\t" +
+        "generates a 40 turn helical inductor footprint,\n\t" +
+        "of 15mm inside diameter, 50 mm outside diameter,\n\t" +
+        "with 0.25mm track width and 3mm segment length.\n");
+
+
+if __name__ == "__main__":
+    main()

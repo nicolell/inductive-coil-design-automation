@@ -26,8 +26,6 @@ class Circle_Coil(Coil):
         center_y = self.y
         final_x = center_x
         final_y = center_y
-
-        
         
         offset = self.spacing + self.size
         #center_x = radius + center_x
@@ -35,7 +33,6 @@ class Circle_Coil(Coil):
         frac_turn = self.turns - int(self.turns)
         diameter = self.diameter
         if frac_turn !=  0:
-            print("hi")
             diameter -= offset
         radius = diameter/ 2 - offset/2#- self.turns * self.size - (self.turns - 1) * self.spacing
         
@@ -45,6 +42,8 @@ class Circle_Coil(Coil):
         m *= 1 if clockwise else -1
         
         for turn in range(int(self.turns)):
+            if turn == 0:
+                self.origin = (radius + offset + center_x, center_y-2.54) # x,y origin
             if radius <= offset:
                 print("radius too small")
                 break
@@ -62,9 +61,11 @@ class Circle_Coil(Coil):
                 self.make_arc(start=(radius + offset + center_x, center_y), 
                             mid=(offset / 2 + center_x, m * (radius + offset / 2) + center_y), 
                             stop=(-radius + center_x, center_y))
+            self.end = (radius + center_x, center_y)
             radius -= offset
+        print(self.end)
 
-        final_x = radius - center_x
+        final_x = -radius + center_x
         final_y = center_y
 
         return self.lines, offset, final_x, final_y
@@ -129,14 +130,14 @@ class Circle_Coil(Coil):
         if self.layers is None:
             self.layers = ["F.Cu", "B.Cu"]
 
-        text = initialize_file()  # Initialize the file or canvas to draw on
+        text = initialize_file()  # header
 
         lines = []
         # if applicable, make partial turns
         text, lines, initial_offset, final_x, final_y, last_dir = self.make_partial_turns()
 
         # make turns until diameter reached
-        lines, offset, x, y = self.make_full_turns()
+        lines, offset, final_x, final_y = self.make_full_turns()
 
         # get number of lines to be created: 1 turn = 4 lines for square shape
         num_turns = int(self.turns) * 4
@@ -145,8 +146,10 @@ class Circle_Coil(Coil):
         for x_start, y_start, x_end, y_end in lines[start_index:]:
             text = make_line(text, x_start, y_start, x_end, y_end, self.size, self.layers[0])
 
+        text = ""
         # add via in the origin of the coil
-        via_x, via_y = final_x, final_y
+        #via_x, via_y = final_x, final_y
+        via_x, via_y = self.end
         #print(via_x, via_y)
         text = make_via(text,via_x, via_y, self.size, self.drill, self.layers)
 
@@ -155,14 +158,15 @@ class Circle_Coil(Coil):
         #pin_y = final_y
         #pin_x = final_x
         if int(self.turns) - self.turns == 0:
-            pin_y= self.y
-            pin_x= self.diameter
+            pin_x, pin_y = self.origin
+            # pin_y= self.y
+            # pin_x= self.diameter
         else:
             pin_x = final_x
             pin_y = final_y
             #pin_x += -2.54 if last_dir == 0 else 0
             #pin_y += 0 if last_dir == 0 else 
-        
+
         # connect bottom layer to via and pinheader
         #text = make_line(text, via_x, via_y, pin_x - 2.54, via_y, size, layer=layers[-1])
         #text = make_line(text, pin_x - 2.54, via_y, pin_x - 2.54, pin_y, size, layer=layers[-1])
@@ -184,6 +188,7 @@ class Circle_Coil(Coil):
                 text = make_line(text, pin_x, via_y, pin_x, pin_y, self.size, layer=self.layers[-1])
                 text = make_line(text, via_x, via_y, pin_x, via_y, self.size, layer=self.layers[-1])
         
+        self.text += text
         
         return self.text
 
@@ -191,6 +196,6 @@ class Circle_Coil(Coil):
 
 if __name__ == '__main__':
     NAME = '../results/TEST7'
-    square = Circle_Coil(turns=3.5, diameter=20)
-    text = square.create_coil()
+    circle = Circle_Coil(turns=9, diameter=50)
+    text = circle.create_coil()
     print_to_file(outfile=NAME, text=text)
