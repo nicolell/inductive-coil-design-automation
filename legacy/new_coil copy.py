@@ -6,13 +6,13 @@ from coil_util import *
 
 def main():
     # some default values for a spiral inductor vaguely OK for Qi applications
-    innerDiameter = 27100  # microns
-    outerDiameter = 32000  # microns
-    segmentLength = 1000  # 1mm length in microns
+    innerDiameter = 27100; # microns
+    outerDiameter = 32000; # microns
+    segmentLength = 1000; # 1mm length in microns
     turnsTotal = 9
-    trackWidth = 1270  # microns
-    trackGap = 1270  # microns
-                    # (((outerDiameter-innerDiameter)/2-(turnsTotal-1)*trackGap))/turnsTotal 
+    trackWidth = 1270; # microns
+    trackGap = 1270; # microns
+                    # (((outerDiameter-innerDiameter)/2-(turnsTotal-1)*trackGap))/turnsTotal;
     straight = True # force second layer to have two straight lines to get to the pinheader instead of a diagonal one
     vertices = 0
 
@@ -59,35 +59,35 @@ def main():
     # some basic preliminaries for all scenarios
 
     #innerDiameter = outerDiameter - 2.0 * ((turnsTotal * (trackWidth + trackGap)) / (turnsTotal - 1)) + trackWidth
-    # startRadius = (innerDiameter + trackWidth)/2.0 
+    # startRadius = (innerDiameter + trackWidth)/2.0;
     if int(turnsTotal) == turnsTotal:
         innerDiameter = outerDiameter - 2.0 * (turnsTotal * trackWidth + (turnsTotal - 1) * trackGap)
     else:
         innerDiameter = outerDiameter - 2.0 * ((int(turnsTotal)+1) * trackWidth + (turnsTotal - 1) * trackGap)
     print((int(turnsTotal)+1))
     print(innerDiameter)
-    startRadius = (innerDiameter)/2.0 
+    startRadius = (innerDiameter)/2.0;
 
-    nextRadius = startRadius 
+    nextRadius = startRadius;
 
     # now some preliminaries for heliical inductors
     # we now sort out appropriate angular step sizes for the loops and
     # the loop spacings based on the inner and outer dimensions given
-    theta = 0 
-    nextTheta = 0 
+    theta = 0;
+    nextTheta = 0;
 
     # we figure out the circumference, well, at least a reasonable
     # approximation of a real number using the set of long integers
-    # circumference = pi * outerDiameter 
+    # circumference = pi * outerDiameter;
 
     # we base segments per loop on the outermost loop circumference
-    segmentsPerLoop = pi*outerDiameter/segmentLength 
+    segmentsPerLoop = pi*outerDiameter/segmentLength;
     # we figure out a step size in radians to step around the spiral
     # which is 2pi radians divided by number of segments
-    deltaTheta = (2.0 * pi)/segmentsPerLoop 
+    deltaTheta = (2.0 * pi)/segmentsPerLoop;
 
     # we now define some flags
-    nextTurnPlease = False 
+    nextTurnPlease = False;
 
     # none of the above prelimiaries are needed for n-gons
 
@@ -97,30 +97,30 @@ def main():
     if not trackGap:
         if (turnsTotal > 1): # the usual scenario
 
-            trackGap = ((outerDiameter - innerDiameter)/2.0 - (turnsTotal*trackWidth))/(turnsTotal-1)  # nm
+            trackGap = ((outerDiameter - innerDiameter)/2.0 - (turnsTotal*trackWidth))/(turnsTotal-1); # nm
 
         else: # stops a divide by zero error if only one loop requested
 
-            trackGap = (innerDiameter/2.0)  # i.e. startRadius
+            trackGap = (innerDiameter/2.0); # i.e. startRadius
 
 
-    radiusIncrementPerTurn = (trackWidth+trackGap) 
-    radiusIncrementPerSegment = radiusIncrementPerTurn/(segmentsPerLoop) 
+    radiusIncrementPerTurn = (trackWidth+trackGap);
+    radiusIncrementPerSegment = radiusIncrementPerTurn/(segmentsPerLoop);
 
     # we use x1,y1,x2,y2 as variables for the begining and end coords of line segments
-    x1 = 0 
-    y1 = 0 
-    x2 = 0 
-    y2 = 0 
+    x1 = 0;
+    y1 = 0;
+    x2 = 0;
+    y2 = 0;
             # we use x1scales,y1scaled,x2scaled,y2scaled as variables for
     # the beginning and end coords of scaled helical coil segments
     # for capacitance length calculation
-    x1scaled = 0 
-    y1scaled = 0 
-    x2scaled = 0 
-    y2scaled = 0 
+    x1scaled = 0;
+    y1scaled = 0;
+    x2scaled = 0;
+    y2scaled = 0;
 
-    layerNumber = 15  # front for kicad
+    layerNumber = 15; # front for kicad
 
     if vertices == 0:
         moduleName = f"{turnsTotal}_turn_helical_inductor"
@@ -145,13 +145,13 @@ def main():
     moduleName = "results/" + moduleName
 
 
-    outputFileName = moduleName + ".kicad_pcb" 
+    outputFileName = moduleName + ".kicad_pcb";
 
     print(f"Generating {turnsTotal} turn inductor:" +
-        outputFileName) 
+        outputFileName);
 
-    print(f"Using track gap of: {trackGap} microns.") 
-    print(f"Using track width of: {trackWidth} microns.") 
+    print(f"Using track gap of: {trackGap} microns.");
+    print(f"Using track width of: {trackWidth} microns.");
 
     footprintOutput = open(outputFileName, 'w')
 
@@ -172,6 +172,7 @@ def main():
     # and length of trace will allow coil resistance to be calculated
     cumulativeCoilLengthMM = 0.0
 
+
     # Extract integer and fractional parts of turnsTotal
     fullTurns = int(turnsTotal)
     fractionalTurn = turnsTotal - fullTurns
@@ -179,22 +180,8 @@ def main():
     start_x = 0
     start_y = 0
     rad = True
-    x_min = 0
-    x_max = 0
-    y_min = 0
-    y_max = 0
     # Loop for full turns
     for spiralCounter in range(fullTurns):
-        # keep track of minimum & maximum x, y values for pinheader placement
-        x_min = x1 if x1 < x_min else x_min
-        x_min = x2 if x2 < x_min else x_min
-        x_max = x1 if x1 > x_max else x_max
-        x_max = x2 if x2 > x_max else x_max
-        y_min = y1 if y1 < y_min else y_min
-        y_min = y2 if y2 < y_min else y_min
-        y_max = y1 if y1 > y_max else y_max
-        y_max = y2 if y2 > y_max else y_max
-
         if vertices != 0:  # we are making an n-gon, as opposed to a helical coil
             # the following if then else structure figures out a starting theta
             # for the n-gon in an attempt to give an aesthetically pleasing coil
@@ -207,6 +194,7 @@ def main():
 
             # we figure out the radius at a vertex using some trigonometry
             nextRadius = startRadius / math.cos(math.pi / vertices) + (spiralCounter * (radiusIncrementPerTurn / math.cos(math.pi / vertices)))
+
 
             # we step through, one vertex after another, until we complete a turn
             for vertexCount in range(vertices):
@@ -275,7 +263,9 @@ def main():
                     rad = False
                     start_x = x1
                     start_y = y1
+                    print(x1scaled, y1scaled)
                     
+
                 # there is only capacitance between turns, so we stop summing
                 # capacitor length at (turnsTotal - 1)
                 if spiralCounter < (turnsTotal - 1):
@@ -313,7 +303,7 @@ def main():
             numVerticesFractional = int(fractionalAngle / (2 * math.pi / vertices))
 
             # Draw the partial turn
-            for vertexCount in range(numVerticesFractional):
+            for vertexCount in range(numVerticesFractional + 1):
                 x1 = (nextRadius * math.cos(vertexCount * 2 * math.pi / vertices + theta)) / 1000.0
                 y1 = (nextRadius * math.sin(vertexCount * 2 * math.pi / vertices + theta)) / 1000.0
                 x2 = ((nextRadius * math.cos((vertexCount + 1) * 2 * math.pi / vertices + theta)) / 1000.0)
@@ -353,129 +343,50 @@ def main():
     # x2, y2 are coordinates of the line 
     # put pinheader there
     # depending on orientation of last line, top layer line goes through 1 or 2 of the pinheader
-    left = int(x1) > int(x2)
-    right = int(x1) < int(x2)
-    up = int(y1) > int(y2)
-    down = int(y1) < int(y2)
-    vertical_first = True
-    if left: # last line goes left
-        # if up:
-        #     y_offset = 0
-        #     x_offset = -2.54
-        #     angle = 90
-        if down: # down
-            if y2 > y_max: # nothing above -> horizontal
-                y_offset = 0
-                x_offset = -2.54
-                angle = 90
-            else:
-                y_offset = +2.54
-                x_offset = 0
-                angle = 0
-        else:  # only left
-            if x2 < -x_max: # nothing left -> vertical
-                y_offset = +2.54
-                x_offset = 0
-                angle = 0
-            else:
-                y_offset = 0
-                x_offset = -2.54
-                angle = 90
-        vertical_first = False
-    
-    elif right:
-        if down:
-            if int(y2) > int(y_max): # nothing below -> horizontal pinheader possible
-                if int(x2) - 5 > int(x_max): # enough space to the left
-                    y_offset = 0
-                    x_offset = -2.54
-                    angle = 90
-                else:
-                    y_offset = +2.54
-                    x_offset = 0
-                    angle = 0
-            else:
-                y_offset = 0
-                x_offset = 0
-                x2 += 2.54
-                angle = 90
-                vertical_first = False
-        elif up:
-            if int(y2) < int(y_min): # nothing above -> horizontal pinheader possible
-                print(y_min)
-                if int(x2) + 5 < int(-x_max): # enough space to the right
-                    y_offset = 0
-                    x_offset = 0
-                    x2 += 2.54
-                    angle = 90
-                else:
-                    y_offset = 0
-                    x_offset = 0
-                    angle = 0
-                    y2 -=2.54
-            else:
-                y_offset = 0
-                x_offset = 0
-                angle = 0
-                y2 -=2.54
-        else: # only right
-            if int(x2) > int(x_max): # nothing right -> vertical pinheader
-                y_offset = 0
-                x_offset = 0
-                angle = 0
-                y2 -=2.54
-            else:
-                y_offset = 0
-                x_offset = 0
-                x2 += 2.54
-                angle = 90
-                vertical_first = False
-    else: # only up or down
-        if up:
-            if int(y2) < int(y_min): # nothing above -> horizontal pinheader possible
-                if int(x2) + 5 < int(-x_max): # enough space to the right
-                    y_offset = 0
-                    x_offset = 0
-                    x2 += 2.54
-                    angle = 90
-                else:
-                    y_offset = 0
-                    x_offset = 0
-                    angle = 0
-                    y2 -=2.54
-            else:
-                y_offset = 0
-                x_offset = 0
-                angle = 0
-                y2 -=2.54
-        elif down: # down
-            if int(y2) > int(y_max): # nothing below -> horizontal pinheader possible
-                if int(x2) - 5 > int(x_max): # enough space to the left
-                    y_offset = 0
-                    x_offset = -2.54
-                    angle = 90
-                else:
-                    y_offset = +2.54
-                    x_offset = 0
-                    angle = 0
-            else:
-                y_offset = +2.54
-                x_offset = 0
-                angle = 0
-        else:
-            print("HLLLOOO")
+    if (vertices == 4 and int(y1) < int(y2)) or (int(x1) > int(x2) and int(y1) == int(y2)): # last line goes down -> go through 1
+        y_offset = 0
+        x_offset = -2.54
+        angle = 90
+    # elif vertices == 9 and int(y1) < int(y2): 
+    #     y_offset = +2.54
+    #     x_offset = 0
+    #     angle = 0
+    elif int(x1) > int(x2) and int(y1) > int(y2): # last line goes up or left -> go through 2
+        print("HI2")
+        y2 -= 2.54
+        y_offset = 0
+        x_offset = 0
+        angle = 0
+    elif int(y1) < int(y2): # last line goes down but there's likely no space to have horizontal pinheader -> go through 1
+        # goes down and left! 
+        if int(x1) > int(x2): 
             y_offset = 0
+            x_offset = -2.54
+            #x2 -= 2.54
+            #y2 += 2.54
+            angle = 90
+        else:
+            y_offset = +2.54
             x_offset = 0
-            y2 -= 2.54
             angle = 0
-    # check for incompatibility
-    if angle == 0 and x2 == x2 + x_offset and y2 < y2 + y_offset:
-        vertical_first = True
-
+    # elif int(y1) > int(y2):
+    #     x2 += 2.54
+    #     y_offset = 0
+    #     x_offset = 0
+    #     angle = 90
+    # else:
+    #     y_offset = 0
+    #     x_offset = -2.54
+    #     angle = 90
+    else:
+        y_offset = +2.54
+        x_offset = 0
+        angle = 0
     line = make_pinheader("", x2, y2, "F.Cu", angle)
     
     if straight:
-        if not vertical_first:
+        if y2 + y_offset == y2:
+            print("HOOOOO")
             # go vertical from origin
             line = make_line(line, start_x, start_y, x2+x_offset, start_y, trackWidthMM, layer="B.Cu")
             # go horizontal from previous line
@@ -574,13 +485,13 @@ def calculateSelfResonance(inductanceHenries, capacitance):
             # Circuits and Systems, 2013, 4, 237-244
 
     # we use frequency = 1/(2*pi*sqrt(LC)) 
-    return (1.0/(2.0*pi*sqrt(inductanceHenries*capacitance))) 
+    return (1.0/(2.0*pi*sqrt(inductanceHenries*capacitance)));
 
 
 def calculateSegmentLength(xOne, yOne, xTwo, yTwo):
 
-    lengthSquared = ((xOne - xTwo) * (xOne - xTwo))+((yOne - yTwo) * (yOne - yTwo)) 
-    return sqrt(lengthSquared) 
+    lengthSquared = ((xOne - xTwo) * (xOne - xTwo))+((yOne - yTwo) * (yOne - yTwo));
+    return sqrt(lengthSquared);
 
 
 def calculateCapacitance(trackGapMilliM, gapLengthMilliM):
@@ -590,19 +501,19 @@ def calculateCapacitance(trackGapMilliM, gapLengthMilliM):
             # Inductors for Wireless Power Transfer System" by
             # Ashraf B. Islam, Syed K. Islam, Fahmida S. Tulip
             # Circuits and Systems, 2013, 4, 237-244
-    etaRC = 3.1  # solder mask relative permittivity a.k.a. dielectric constant
-    etaRS = 4.7  # approx, fibreglass relative permittivity (dielectric constant)
+    etaRC = 3.1; # solder mask relative permittivity a.k.a. dielectric constant
+    etaRS = 4.7; # approx, fibreglass relative permittivity (dielectric constant)
             # etaRA = 1.006 for air at STP at ~ 0.9MHz
-    alpha = 0.9  # for FR4 coating
-    beta = 0.1  # for FR4 substrate	
-    eta0 = 8.854E-12  # dielectric constant of a vacuum	
-    copperThicknessM = 0.00003556  # in metres = 35.56 microns for 1oz/ft^2 copper
-    trackGapM = trackGapMilliM/1000.0  # convert mm to metres
-    gapLengthM = gapLengthMilliM/1000.0  # convert mm to metres
-    calculatedCapacitance = (alpha*etaRC + beta*etaRS)*eta0*copperThicknessM*gapLengthM/trackGapM 
+    alpha = 0.9; # for FR4 coating
+    beta = 0.1; # for FR4 substrate	
+    eta0 = 8.854E-12; # dielectric constant of a vacuum	
+    copperThicknessM = 0.00003556; # in metres = 35.56 microns for 1oz/ft^2 copper
+    trackGapM = trackGapMilliM/1000.0; # convert mm to metres
+    gapLengthM = gapLengthMilliM/1000.0; # convert mm to metres
+    calculatedCapacitance = (alpha*etaRC + beta*etaRS)*eta0*copperThicknessM*gapLengthM/trackGapM;
     # i.e. the formula for parallel plates of a capacitor
     #            = (plateArea/gap)*dielectricConstantOfVacuum*relativePermittivity
-    return calculatedCapacitance
+    return calculatedCapacitance;
 
 
 def calculateInductance(turns, dIn, dOut, c1, c2, c3, c4):
@@ -612,12 +523,12 @@ def calculateInductance(turns, dIn, dOut, c1, c2, c3, c4):
     # Inductors for Wireless Power Transfer System" by
     # Ashraf B. Islam, Syed K. Islam, Fahmida S. Tulip
     # Circuits and Systems, 2013, 4, 237-244
-    dAvg = ((dOut + dIn)/1000000.0)/2.0  # convert distance in microns to metres
-    sigma = (dOut - dIn)/(1.0*(dOut + dIn))  # sigma = "coil fill ratio"
-    mu = 4*pi/10000000  # vacuum permeability = 4*pi * 10^(-7)
-    inductance = 0 
-    inductance = ((mu * turns * turns * dAvg * c1)/2.0)*(log(c2/sigma) + c3*sigma + c4*sigma*sigma) 
-    return inductance  # in Henries (H)
+    dAvg = ((dOut + dIn)/1000000.0)/2.0; # convert distance in microns to metres
+    sigma = (dOut - dIn)/(1.0*(dOut + dIn)); # sigma = "coil fill ratio"
+    mu = 4*pi/10000000; # vacuum permeability = 4*pi * 10^(-7)
+    inductance = 0;
+    inductance = ((mu * turns * turns * dAvg * c1)/2.0)*(log(c2/sigma) + c3*sigma + c4*sigma*sigma);
+    return inductance; # in Henries (H)
 
 
 def printUsage():

@@ -1,9 +1,14 @@
 # inductive-coil-design-automation
+The aim of this repository is to automate the design of simple inductive coils. 
 
+## Features
+create inductive coils of different shapes with
+- variable turn number, including partial turns
+- 
 # TODO
 This repository is still a work in progress, current goals include
 - optimizing pinheader placement to take up the least amount of space, regardless of coil shape
-- enabling fractional turns for all shapes
+    - find and handle all edge cases, especiall for random partial turns & circular coils
 - combining approaches/ using a regular circular coil (made of arcs) instead of the one using small lines as approximations in new_coil.py?
 - restructuring & dividing code into separate python scripts to make code more readable
 - add parameter s.t. coils in new_coil.py can be placed wherever (not automatically at 0,0)
