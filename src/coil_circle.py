@@ -193,9 +193,14 @@ class Circle_Coil(Coil):
         return self.text
 
 
-
 if __name__ == '__main__':
-    NAME = '../results/TEST7'
-    circle = Circle_Coil(turns=9, diameter=50)
+    # adjust parameters as needed
+    diameter = 45
+    spacing = 1.27
+    size = 1.27
+    turns = 9
+    NAME = f'results/{turns}_turn_circle_coil'
+
+    circle = Circle_Coil(diameter=diameter, spacing=spacing, size=size, turns=turns)
     text = circle.create_coil()
     print_to_file(outfile=NAME, text=text)

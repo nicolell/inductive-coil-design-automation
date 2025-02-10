@@ -3,16 +3,15 @@ import math
 import sys
 from coil_util import *
 
-
 def main():
-    # some default values for a spiral inductor vaguely OK for Qi applications
+    # some default values
     innerDiameter = 27100  # microns
     outerDiameter = 32000  # microns
     segmentLength = 1000  # 1mm length in microns
     turnsTotal = 9
     trackWidth = 1270  # microns
     trackGap = 1270  # microns
-                    # (((outerDiameter-innerDiameter)/2-(turnsTotal-1)*trackGap))/turnsTotal 
+    drill = 0.5 # mm
     straight = True # force second layer to have two straight lines to get to the pinheader instead of a diagonal one
     vertices = 0
 
@@ -46,7 +45,10 @@ def main():
             counter += 1
         elif sys.argv[counter].startswith("-g"):
             trackGap = int(sys.argv[counter + 1])
-            counter += 1
+            counter += 2
+        elif sys.argv[counter].startswith("-d"):
+            drill = float(sys.argv[counter + 1])
+            counter += 2
         elif sys.argv[counter].startswith("-s"):
             straight = False
             counter += 1
@@ -54,18 +56,13 @@ def main():
             printUsage()
             sys.exit(0)
 
-
-
     # some basic preliminaries for all scenarios
 
-    #innerDiameter = outerDiameter - 2.0 * ((turnsTotal * (trackWidth + trackGap)) / (turnsTotal - 1)) + trackWidth
-    # startRadius = (innerDiameter + trackWidth)/2.0 
+    # dynamically compute inner diameter s.t. outer diameter can be adhered to 
     if int(turnsTotal) == turnsTotal:
         innerDiameter = outerDiameter - 2.0 * (turnsTotal * trackWidth + (turnsTotal - 1) * trackGap)
     else:
         innerDiameter = outerDiameter - 2.0 * ((int(turnsTotal)+1) * trackWidth + (turnsTotal - 1) * trackGap)
-    print((int(turnsTotal)+1))
-    print(innerDiameter)
     startRadius = (innerDiameter)/2.0 
 
     nextRadius = startRadius 
@@ -88,31 +85,24 @@ def main():
 
     # we now define some flags
     nextTurnPlease = False 
-
-    # none of the above prelimiaries are needed for n-gons
-
     
     # if trackgap not given, calculate an appropriate one
-
     if not trackGap:
         if (turnsTotal > 1): # the usual scenario
-
             trackGap = ((outerDiameter - innerDiameter)/2.0 - (turnsTotal*trackWidth))/(turnsTotal-1)  # nm
-
         else: # stops a divide by zero error if only one loop requested
-
             trackGap = (innerDiameter/2.0)  # i.e. startRadius
 
 
     radiusIncrementPerTurn = (trackWidth+trackGap) 
     radiusIncrementPerSegment = radiusIncrementPerTurn/(segmentsPerLoop) 
 
-    # we use x1,y1,x2,y2 as variables for the begining and end coords of line segments
+    # we use x1,y1,x2,y2 as variables for the beginning and end coords of line segments
     x1 = 0 
     y1 = 0 
     x2 = 0 
     y2 = 0 
-            # we use x1scales,y1scaled,x2scaled,y2scaled as variables for
+    # we use x1scaled,y1scaled,x2scaled,y2scaled as variables for
     # the beginning and end coords of scaled helical coil segments
     # for capacitance length calculation
     x1scaled = 0 
@@ -147,11 +137,11 @@ def main():
 
     outputFileName = moduleName + ".kicad_pcb" 
 
-    print(f"Generating {turnsTotal} turn inductor:" +
-        outputFileName) 
+    print(f"Generating {turnsTotal} turn inductor:\t" + outputFileName) 
 
     print(f"Using track gap of: {trackGap} microns.") 
-    print(f"Using track width of: {trackWidth} microns.") 
+    print(f"Using track width of: {trackWidth} microns.")
+    print(f"Using via drill size of: {drill} mm.")
 
     footprintOutput = open(outputFileName, 'w')
 
@@ -239,15 +229,13 @@ def main():
                 # we only have capacitance between turns, so we stop
                 # summing capacitance length when generating the
                 # final turn, i.e. stop at (turnsTotal - 1)
-
                 if spiralCounter < (turnsTotal - 1):
                     cumulativeCapacitorLengthMM += calculateSegmentLength(x1, y1, x2, y2) + ((radiusIncrementPerTurn / 1000.0) * math.tan(math.pi / vertices))
 
                 # we add the segment length to the total coil length
                 cumulativeCoilLengthMM += calculateSegmentLength(x1, y1, x2, y2)
 
-                # for gEDA we have to produce a pad description of the form
-                # Pad[X1 Y1 X2 Y2 Thickness Clearance Mask Name Number SFlags]
+                # create coil line from (x1,y1) to (x2,y2)
                 line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, "F.Cu")
                 footprintOutput.write(line)
 
@@ -257,7 +245,6 @@ def main():
                 nextTheta = theta + deltaTheta
                 nextRadius = startRadius + radiusIncrementPerSegment
                 # we figure out the coordinates in mm as double variables
-                # gEDA will recognise "XXX.XXmm" as mm
                 x1 = ((startRadius * math.cos(theta)) / 1000.0)
                 y1 = ((startRadius * math.sin(theta)) / 1000.0)
                 x2 = ((nextRadius * math.cos(nextTheta)) / 1000.0)
@@ -284,11 +271,7 @@ def main():
                 # we add the segment length to the total coil length
                 cumulativeCoilLengthMM += calculateSegmentLength(x1, y1, x2, y2)
 
-                # for gEDA we have to produce a pad description of the form
-                # Pad[X1 Y1 X2 Y2 Thickness Clearance Mask Name Number SFlags]
-                # for kicad we have to produce
-                # a Draw Segment "DS" string of the form
-                # "DS x1 y1 x2 y2 thickness layer"
+                # create coil line from (x1,y1) to (x2,y2)
                 line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, "F.Cu")
                 footprintOutput.write(line)
 
@@ -382,7 +365,6 @@ def main():
                 x_offset = -2.54
                 angle = 90
         vertical_first = False
-    
     elif right:
         if down:
             if int(y2) > int(y_max): # nothing below -> horizontal pinheader possible
@@ -463,7 +445,6 @@ def main():
                 x_offset = 0
                 angle = 0
         else:
-            print("HLLLOOO")
             y_offset = 0
             x_offset = 0
             y2 -= 2.54
@@ -474,23 +455,21 @@ def main():
 
     line = make_pinheader("", x2, y2, "F.Cu", angle)
     
-    if straight:
+    if straight: # connect bottom layer in vertical + horizontal lines only
         if not vertical_first:
             # go vertical from origin
             line = make_line(line, start_x, start_y, x2+x_offset, start_y, trackWidthMM, layer="B.Cu")
             # go horizontal from previous line
             line = make_line(line, x2+x_offset, start_y, x2+x_offset, y2+y_offset, trackWidthMM, layer="B.Cu")
-            
         else:
-
             # go horizontal from origin
             line = make_line(line, start_x, start_y, start_x, y2+y_offset, trackWidthMM, layer="B.Cu")
             # go vertical from previous line
             line = make_line(line, start_x, y2+y_offset, x2+x_offset, y2+y_offset, trackWidthMM, layer="B.Cu")
-    else:
+    else: # connect bottom layer diagonally
         line = make_line(line, start_x, start_y, x2+x_offset, y2, trackWidthMM, layer="B.Cu")
     # add via to the coil origin
-    line = make_via(line, start_x, start_y, trackWidthMM, 0.5, layers=["F.Cu", "B.Cu"])
+    line = make_via(line, start_x, start_y, trackWidthMM, drill, layers=["F.Cu", "B.Cu"])
     footprintOutput.write(line)
 
 
@@ -547,8 +526,6 @@ def main():
             " lack of published parameters\nfor the inductance of "
             f"{vertices} vertex inductors.")
 
-
-
     finalInductanceH = calculateInductance(turnsTotal, innerDiameter, outerDiameter, greenhouseC1, greenhouseC2, greenhouseC3, greenhouseC4)
 
     print(f"Calculated inductance (Henries): {finalInductanceH}")
@@ -566,12 +543,11 @@ def main():
 
 
 def calculateSelfResonance(inductanceHenries, capacitance):
-
-            # method employed described in http://dx.doi.org/10.4236/cs.2013.42032
-            # "Design and Optimization of Printed Circuit Board
-            # Inductors for Wireless Power Transfer System" by
-            # Ashraf B. Islam, Syed K. Islam, Fahmida S. Tulip
-            # Circuits and Systems, 2013, 4, 237-244
+    # method employed described in http://dx.doi.org/10.4236/cs.2013.42032
+    # "Design and Optimization of Printed Circuit Board
+    # Inductors for Wireless Power Transfer System" by
+    # Ashraf B. Islam, Syed K. Islam, Fahmida S. Tulip
+    # Circuits and Systems, 2013, 4, 237-244
 
     # we use frequency = 1/(2*pi*sqrt(LC)) 
     return (1.0/(2.0*pi*sqrt(inductanceHenries*capacitance))) 
@@ -584,12 +560,11 @@ def calculateSegmentLength(xOne, yOne, xTwo, yTwo):
 
 
 def calculateCapacitance(trackGapMilliM, gapLengthMilliM):
-
-            # method employed described in http://dx.doi.org/10.4236/cs.2013.42032
-            # "Design and Optimization of Printed Circuit Board
-            # Inductors for Wireless Power Transfer System" by
-            # Ashraf B. Islam, Syed K. Islam, Fahmida S. Tulip
-            # Circuits and Systems, 2013, 4, 237-244
+    # method employed described in http://dx.doi.org/10.4236/cs.2013.42032
+    # "Design and Optimization of Printed Circuit Board
+    # Inductors for Wireless Power Transfer System" by
+    # Ashraf B. Islam, Syed K. Islam, Fahmida S. Tulip
+    # Circuits and Systems, 2013, 4, 237-244
     etaRC = 3.1  # solder mask relative permittivity a.k.a. dielectric constant
     etaRS = 4.7  # approx, fibreglass relative permittivity (dielectric constant)
             # etaRA = 1.006 for air at STP at ~ 0.9MHz
@@ -606,7 +581,6 @@ def calculateCapacitance(trackGapMilliM, gapLengthMilliM):
 
 
 def calculateInductance(turns, dIn, dOut, c1, c2, c3, c4):
-
     # method employed described in http://dx.doi.org/10.4236/cs.2013.42032
     # "Design and Optimization of Printed Circuit Board
     # Inductors for Wireless Power Transfer System" by
@@ -621,22 +595,38 @@ def calculateInductance(turns, dIn, dOut, c1, c2, c3, c4):
 
 
 def printUsage():
+    s = """
+    Usage:
 
-    print("\nUsage:\n\n\t" +
-        "java SpiralInductorFootprintGenerator -option value\n" +
-                    "\n\t\t-vN\texport an N-gonal inductor instead of default helical inductor\n" +
-        "\n\t\t\ti.e. -v3 for triangle, -v4 for square, -v6 for hexagon\n" + 
-                    "\n\t\t-i long\t inner diameter of coil in microns\n" +
-                    "\n\t\t-o long\t outer diameter of coil in microns\n" +
-                    "\n\t\t-w long\t track width in microns\n" +
-                    "\n\t\t-n long\t number of turns\n" +
-        "\n\t\t-l long\t length of segment used to approximate circular arc in microns\n" +
-        "\n\t\t-h\t prints this\n\n" +
-        "Example usage:\n\n\t" +
-        "java SpiralInductorFootprintGenerator -n 40 -i 15000 -o 50000 -w 250 -l 3000\n\n\t" +
-        "generates a 40 turn helical inductor footprint,\n\t" +
-        "of 15mm inside diameter, 50 mm outside diameter,\n\t" +
-        "with 0.25mm track width and 3mm segment length.\n")
+            python3 src/new_coil.py -option value
+
+                    -vN export an N-gonal inductor instead of default helical inductor
+
+                        i.e. -v3 for triangle, -v4 for square, -v6 for hexagon
+
+                    -i long  inner diameter of coil in microns
+
+                    -o long  outer diameter of coil in microns
+
+                    -w long  track width in microns
+
+                    -n long  number of turns
+
+                    -g long  track gap in microns
+
+                    -d long  via drill in mm
+
+                    -l long  length of segment used to approximate circular arc in microns
+
+                    -h prints this
+
+    Example usage:
+
+            python3 src/new_coil.py -o 50000 -w 1270 -v7 -n 5 -g 1270 -d 0.5
+
+            produces a heptagonal coil with 5 turns, 50 mm outer diameter, 1.27 mm track width, 1.27 mm track grap,  0.5 mm via drill
+    """
+    print(s)
 
 
 if __name__ == "__main__":

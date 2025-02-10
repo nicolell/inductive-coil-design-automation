@@ -141,7 +141,6 @@ def plot_magnetic_field(current, coil_segments, x_range, y_range, resolution=20,
 # Example usage
 if __name__ == "__main__":
     # Define the coil as a list of line segments
-    # Example: A square coil with an extended line for coiling
     coil_segments = [
     (np.array([0.008, 0.008]), np.array([-0.008, 0.008])),
     (np.array([-0.008, 0.008]), np.array([-0.008, -0.009])),   # Extended left side

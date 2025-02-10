@@ -190,7 +190,7 @@ def square_spiral(start_x, start_y, diameter=10, size=1.27, drill=0.5, spacing=1
 
 if __name__ == '__main__':
     #text = initialize_file()
-	NAME = '../results/TEST5'
+	NAME = 'results/TEST5'
 	start_x = 100
 	start_y = 100
     
