@@ -14,6 +14,8 @@ def main():
     drill = 0.5 # mm
     straight = True # force second layer to have two straight lines to get to the pinheader instead of a diagonal one
     vertices = 0
+    pos_x = 100 # x coordinate to start the coil at
+    pos_y = 100 # y coordinate to start the coil at
 
     # we now parse arguments parsed via the command line
     if len(sys.argv) == 1:
@@ -169,21 +171,11 @@ def main():
     start_x = 0
     start_y = 0
     rad = True
-    x_min = 0
     x_max = 0
     y_min = 0
     y_max = 0
     # Loop for full turns
     for spiralCounter in range(fullTurns):
-        # keep track of minimum & maximum x, y values for pinheader placement
-        x_min = x1 if x1 < x_min else x_min
-        x_min = x2 if x2 < x_min else x_min
-        x_max = x1 if x1 > x_max else x_max
-        x_max = x2 if x2 > x_max else x_max
-        y_min = y1 if y1 < y_min else y_min
-        y_min = y2 if y2 < y_min else y_min
-        y_max = y1 if y1 > y_max else y_max
-        y_max = y2 if y2 > y_max else y_max
 
         if vertices != 0:  # we are making an n-gon, as opposed to a helical coil
             # the following if then else structure figures out a starting theta
@@ -217,10 +209,24 @@ def main():
                     y2 = y1 + ((y2 - y1) * (calculateSegmentLength(x1, y1, x2, y2) + (radiusIncrementPerTurn / (math.sin(2.0 * math.pi / vertices) * 1000))) / calculateSegmentLength(x1, y1, x2, y2))
                 else:  # last segment of current loop
                     nextRadius = startRadius / math.cos(math.pi / vertices) + ((spiralCounter + 1) * (radiusIncrementPerTurn / math.cos(math.pi / vertices)))
-                    x1 = x2  # copy the previous coords
-                    y1 = y2  # copy the previous coords
+                    x1 = x2 - pos_x  # copy the previous coords
+                    y1 = y2 - pos_y  # copy the previous coords
                     x2 = ((nextRadius * math.cos((vertexCount + 1) * 2 * math.pi / vertices + theta)) / 1000.0)
                     y2 = ((nextRadius * math.sin((vertexCount + 1) * 2 * math.pi / vertices + theta)) / 1000.0)
+
+                # put coil into desired coordinates
+                x1 += pos_x
+                x2 += pos_x
+                y1 += pos_y
+                y2 += pos_y
+                # keep track of minimum & maximum x, y values for pinheader placement
+                if vertexCount < vertices -1:
+                    x_max = x1 if x1 > x_max else x_max
+                    x_max = x2 if x2 > x_max else x_max
+                    y_min = y1 if y1 < y_min else y_min
+                    y_min = y2 if y2 < y_min else y_min
+                    y_max = y1 if y1 > y_max else y_max
+                    y_max = y2 if y2 > y_max else y_max
 
                 if spiralCounter == 0 and vertexCount == 0:
                     start_x = x1
@@ -258,11 +264,19 @@ def main():
                 x2scaled = ((nextRadius + (trackGap / 2.0)) * math.cos(nextTheta)) / 1000.0
                 y2scaled = ((nextRadius + (trackGap / 2.0)) * math.sin(nextTheta)) / 1000.0
 
-                if rad:
-                    rad = False
-                    start_x = x1
-                    start_y = y1
-                    
+                # put coil into desired coordinates
+                x1 += pos_x
+                x2 += pos_x
+                y1 += pos_y
+                y2 += pos_y
+                # keep track of minimum & maximum x, y values for pinheader placement
+                x_max = x1 if x1 > x_max else x_max
+                x_max = x2 if x2 > x_max else x_max
+                y_min = y1 if y1 < y_min else y_min
+                y_min = y2 if y2 < y_min else y_min
+                y_max = y1 if y1 > y_max else y_max
+                y_max = y2 if y2 > y_max else y_max
+
                 # there is only capacitance between turns, so we stop summing
                 # capacitor length at (turnsTotal - 1)
                 if spiralCounter < (turnsTotal - 1):
@@ -270,6 +284,12 @@ def main():
 
                 # we add the segment length to the total coil length
                 cumulativeCoilLengthMM += calculateSegmentLength(x1, y1, x2, y2)
+
+                # store coil origin coordinates
+                if rad:
+                    rad = False
+                    start_x = x1
+                    start_y = y1
 
                 # create coil line from (x1,y1) to (x2,y2)
                 line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, "F.Cu")
@@ -302,6 +322,20 @@ def main():
                 x2 = ((nextRadius * math.cos((vertexCount + 1) * 2 * math.pi / vertices + theta)) / 1000.0)
                 y2 = ((nextRadius * math.sin((vertexCount + 1) * 2 * math.pi / vertices + theta)) / 1000.0)
 
+                # put coil into desired coordinates
+                x1 += pos_x
+                x2 += pos_x
+                y1 += pos_y
+                y2 += pos_y
+                # keep track of minimum & maximum x, y values for pinheader placement
+                if vertexCount < numVerticesFractional -1:
+                    x_max = x1 if x1 > x_max else x_max
+                    x_max = x2 if x2 > x_max else x_max
+                    y_min = y1 if y1 < y_min else y_min
+                    y_min = y2 if y2 < y_min else y_min
+                    y_max = y1 if y1 > y_max else y_max
+                    y_max = y2 if y2 > y_max else y_max
+
                 # Add the segment length to the total coil length
                 cumulativeCoilLengthMM += calculateSegmentLength(x1, y1, x2, y2)
 
@@ -323,6 +357,20 @@ def main():
                 x2 = ((nextRadius * math.cos(nextTheta)) / 1000.0)
                 y2 = ((nextRadius * math.sin(nextTheta)) / 1000.0)
 
+                # put coil into desired coordinates
+                x1 += pos_x
+                x2 += pos_x
+                y1 += pos_y
+                y2 += pos_y
+                # keep track of minimum & maximum x, y values for pinheader placement
+                if nextTheta < fractionalAngle:
+                    x_max = x1 if x1 > x_max else x_max
+                    x_max = x2 if x2 > x_max else x_max
+                    y_min = y1 if y1 < y_min else y_min
+                    y_min = y2 if y2 < y_min else y_min
+                    y_max = y1 if y1 > y_max else y_max
+                    y_max = y2 if y2 > y_max else y_max
+
                 # Add the segment length to the total coil length
                 cumulativeCoilLengthMM += calculateSegmentLength(x1, y1, x2, y2)
 
@@ -341,74 +389,47 @@ def main():
     up = int(y1) > int(y2)
     down = int(y1) < int(y2)
     vertical_first = True
+    y_offset, x_offset, angle = 0, 0, 0
     if left: # last line goes left
-        # if up:
-        #     y_offset = 0
-        #     x_offset = -2.54
-        #     angle = 90
         if down: # down
+            print(y2, y_max)
             if y2 > y_max: # nothing above -> horizontal
-                y_offset = 0
                 x_offset = -2.54
                 angle = 90
             else:
                 y_offset = +2.54
-                x_offset = 0
-                angle = 0
         else:  # only left
-            if x2 < -x_max: # nothing left -> vertical
+            print(int(x2) , int(outerDiameter/1000 + x_max - pos_x + (trackGap+ trackWidth)/1000))
+            if int(x2) < int(outerDiameter/1000 + x_max - pos_x + (trackGap+ trackWidth)/1000): # nothing left -> vertical
                 y_offset = +2.54
-                x_offset = 0
-                angle = 0
             else:
-                y_offset = 0
                 x_offset = -2.54
                 angle = 90
         vertical_first = False
     elif right:
         if down:
             if int(y2) > int(y_max): # nothing below -> horizontal pinheader possible
-                if int(x2) - 5 > int(x_max): # enough space to the left
-                    y_offset = 0
-                    x_offset = -2.54
-                    angle = 90
-                else:
-                    y_offset = +2.54
-                    x_offset = 0
-                    angle = 0
+               # if int(x2) - 5 > int(x_max): # enough space to the left
+                x_offset = -2.54
+                angle = 90
+                #else:
+                #    y_offset = +2.54
             else:
-                y_offset = 0
-                x_offset = 0
                 x2 += 2.54
                 angle = 90
                 vertical_first = False
         elif up:
-            if int(y2) < int(y_min): # nothing above -> horizontal pinheader possible
-                print(y_min)
-                if int(x2) + 5 < int(-x_max): # enough space to the right
-                    y_offset = 0
-                    x_offset = 0
+            print(y2, outerDiameter/1000 + y_max - pos_y)
+            print(pos_y, y_max-pos_y)
+            if int(y2) < int(outerDiameter/1000 + y_max - pos_y): # nothing above -> horizontal pinheader possible
                     x2 += 2.54
                     angle = 90
-                else:
-                    y_offset = 0
-                    x_offset = 0
-                    angle = 0
-                    y2 -=2.54
             else:
-                y_offset = 0
-                x_offset = 0
-                angle = 0
                 y2 -=2.54
         else: # only right
             if int(x2) > int(x_max): # nothing right -> vertical pinheader
-                y_offset = 0
-                x_offset = 0
-                angle = 0
                 y2 -=2.54
             else:
-                y_offset = 0
-                x_offset = 0
                 x2 += 2.54
                 angle = 90
                 vertical_first = False
@@ -416,39 +437,21 @@ def main():
         if up:
             if int(y2) < int(y_min): # nothing above -> horizontal pinheader possible
                 if int(x2) + 5 < int(-x_max): # enough space to the right
-                    y_offset = 0
-                    x_offset = 0
                     x2 += 2.54
                     angle = 90
                 else:
-                    y_offset = 0
-                    x_offset = 0
-                    angle = 0
                     y2 -=2.54
             else:
-                y_offset = 0
-                x_offset = 0
-                angle = 0
                 y2 -=2.54
         elif down: # down
+            print(y2, y_max, y_min, y1)
             if int(y2) > int(y_max): # nothing below -> horizontal pinheader possible
-                if int(x2) - 5 > int(x_max): # enough space to the left
-                    y_offset = 0
-                    x_offset = -2.54
-                    angle = 90
-                else:
-                    y_offset = +2.54
-                    x_offset = 0
-                    angle = 0
+                x_offset = -2.54
+                angle = 90
             else:
                 y_offset = +2.54
-                x_offset = 0
-                angle = 0
         else:
-            y_offset = 0
-            x_offset = 0
             y2 -= 2.54
-            angle = 0
     # check for incompatibility
     if angle == 0 and x2 == x2 + x_offset and y2 < y2 + y_offset:
         vertical_first = True

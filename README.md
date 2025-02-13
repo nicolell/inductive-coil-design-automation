@@ -58,7 +58,6 @@ This repository is still a work in progress, current goals include
     - making the code for finding the optimal coil placement less redundant and more readable (implement method to reuse code instead of copying it multiple times as is currently the case)
 - combining approaches/ using a regular circular coil (made of arcs) instead of the one using small lines as approximations in new_coil.py?
 - restructuring & dividing code into separate python scripts to make code more readable
-- adding a parameter s.t. coils in new_coil.py can be placed wherever (not automatically at 0,0)
 - adding support for multiple layers! not just top and bottom Cu layers (this also requires adding the layer as parameter instead of the current hardcode in new_coil.py)
 - optimize placement of multiple coils on a 10cm x 10cm PCB board (4 coils, each coil around 5cm x 5cm)
 - ensure outer diameter is always adhered to, for all shapes!
