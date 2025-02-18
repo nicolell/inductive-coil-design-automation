@@ -7,7 +7,7 @@ def main():
     # some default values
     innerDiameter = 27100  # microns
     outerDiameter = 32000  # microns
-    segmentLength = 1000  # 1mm length in microns
+    segmentLength = 100  # 1mm length in microns
     turnsTotal = 9
     trackWidth = 1270  # microns
     trackGap = 1270  # microns
@@ -16,6 +16,7 @@ def main():
     vertices = 0
     pos_x = 100 # x coordinate to start the coil at
     pos_y = 100 # y coordinate to start the coil at
+    lines = [] # array to save all lines in
 
     # we now parse arguments parsed via the command line
     if len(sys.argv) == 1:
@@ -243,6 +244,7 @@ def main():
 
                 # create coil line from (x1,y1) to (x2,y2)
                 line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, "F.Cu")
+                save_lines(start_x=x1, start_y=y1, end_x=x2, end_y=y2, save_arr=lines)
                 footprintOutput.write(line)
 
         # end n-gon IF statement 
@@ -293,6 +295,7 @@ def main():
 
                 # create coil line from (x1,y1) to (x2,y2)
                 line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, "F.Cu")
+                save_lines(start_x=x1, start_y=y1, end_x=x2, end_y=y2, save_arr=lines)
                 footprintOutput.write(line)
 
                 startRadius = nextRadius
@@ -341,6 +344,7 @@ def main():
 
                 # Output the segment
                 line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, "F.Cu")
+                save_lines(start_x=x1, start_y=y1, end_x=x2, end_y=y2, save_arr=lines)
                 footprintOutput.write(line)
 
         elif vertices == 0:  # helical coil case
@@ -376,6 +380,7 @@ def main():
 
                 # Output the segment
                 line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, "F.Cu")
+                save_lines(start_x=x1, start_y=y1, end_x=x2, end_y=y2, save_arr=lines)
                 footprintOutput.write(line)
 
                 startRadius = nextRadius
@@ -462,15 +467,21 @@ def main():
         if not vertical_first:
             # go vertical from origin
             line = make_line(line, start_x, start_y, x2+x_offset, start_y, trackWidthMM, layer="B.Cu")
+            #save_lines(start_x=start_x, start_y=start_y, end_x=x2+x_offset, end_y=start_y, save_arr=lines)
+            
             # go horizontal from previous line
             line = make_line(line, x2+x_offset, start_y, x2+x_offset, y2+y_offset, trackWidthMM, layer="B.Cu")
+            #save_lines(start_x=x2+x_offset, start_y=start_y, end_x=x2+x_offset, end_y=y2+y_offset, save_arr=lines)
         else:
             # go horizontal from origin
             line = make_line(line, start_x, start_y, start_x, y2+y_offset, trackWidthMM, layer="B.Cu")
+            #save_lines(start_x=start_x, start_y=start_y, end_x=start_x, end_y=y2+y_offset, save_arr=lines)
             # go vertical from previous line
             line = make_line(line, start_x, y2+y_offset, x2+x_offset, y2+y_offset, trackWidthMM, layer="B.Cu")
+            #save_lines(start_x=start_x, start_y=y2+y_offset, end_x=x2+x_offset, end_y=y2+y_offset, save_arr=lines)
     else: # connect bottom layer diagonally
-        line = make_line(line, start_x, start_y, x2+x_offset, y2, trackWidthMM, layer="B.Cu")
+        line = make_line(line, start_x, start_y, x2+x_offset, y2+y_offset, trackWidthMM, layer="B.Cu")
+        #save_lines(start_x=start_x, start_y=start_y, end_x=x2+x_offset, end_y=y2+y_offset, save_arr=lines)
     # add via to the coil origin
     line = make_via(line, start_x, start_y, trackWidthMM, drill, layers=["F.Cu", "B.Cu"])
     footprintOutput.write(line)
@@ -543,6 +554,14 @@ def main():
     footprintOutput.write("\n)")
     footprintOutput.close()
 
+    # save last line of the coil and plot magnetic field
+    lines.append(f"{x2/10:.2f},{y2/10:.2f},0,1")
+    write_lines_to_file(f"{moduleName}.txt", lines)
+    corner = (int(pos_x/10-outerDiameter/20000)+1, int(pos_y/10-outerDiameter/20000)+1)
+    plane='z'
+    level = 1
+    magnetic_field(moduleName, corner, outerDiameter/10000, plane, level)
+    
 
 
 def calculateSelfResonance(inductanceHenries, capacitance):
@@ -595,41 +614,6 @@ def calculateInductance(turns, dIn, dOut, c1, c2, c3, c4):
     inductance = 0 
     inductance = ((mu * turns * turns * dAvg * c1)/2.0)*(log(c2/sigma) + c3*sigma + c4*sigma*sigma) 
     return inductance  # in Henries (H)
-
-
-def printUsage():
-    s = """
-    Usage:
-
-            python3 src/new_coil.py -option value
-
-                    -vN export an N-gonal inductor instead of default helical inductor
-
-                        i.e. -v3 for triangle, -v4 for square, -v6 for hexagon
-
-                    -i long  inner diameter of coil in microns
-
-                    -o long  outer diameter of coil in microns
-
-                    -w long  track width in microns
-
-                    -n long  number of turns
-
-                    -g long  track gap in microns
-
-                    -d long  via drill in mm
-
-                    -l long  length of segment used to approximate circular arc in microns
-
-                    -h prints this
-
-    Example usage:
-
-            python3 src/new_coil.py -o 50000 -w 1270 -v7 -n 5 -g 1270 -d 0.5
-
-            produces a heptagonal coil with 5 turns, 50 mm outer diameter, 1.27 mm track width, 1.27 mm track grap,  0.5 mm via drill
-    """
-    print(s)
 
 
 if __name__ == "__main__":

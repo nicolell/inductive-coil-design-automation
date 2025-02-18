@@ -1,4 +1,6 @@
 import math
+import numpy as np
+import biot_savart_v4_3 as bs
 
 def initialize_file():
     return """(kicad_pcb
@@ -95,6 +97,42 @@ def make_line(text, start_x, start_y, end_x, end_y, line_width=1.27, layer="F.Cu
 	)
 """
     return text + seg
+
+def save_lines(start_x, start_y, end_x, end_y, save_arr):
+	#start = np.array([start_x, start_y])
+	#end = np.array([end_x, end_y])
+
+	#tmp = np.array([[start_x, start_y, 0], [end_x, end_y, 0]])
+	#save_arr.append(tmp)
+	save_arr.append(f"{start_x/10:.2f},{start_y/10:.2f},0,1")
+	#save_arr.append(f"{end_x:.2f},{end_y:.2f},0,1")
+
+def write_lines_to_file(file_name, lines):
+	d = open(file_name, 'w')
+	for line in lines:
+		d.write(line + '\n')
+	d.close()
+
+def magnetic_field(module_name, left_upper_corner, diameter, plane, level):
+	x,y = left_upper_corner
+	box = diameter-1
+	bs.write_target_volume(f"{module_name}.txt", f"{module_name}_targetvol", (box, box, 2), (x, y, -1), 1, 1)
+	# generates a target volume from the coil stored at coil.txt
+	# uses a 30 x 15 x 15 bounding box, starting at (-5, -0.5, -2.5)
+	# uses 1 cm resolution
+
+	bs.plot_coil(f"{module_name}.txt")
+	# plots the coil stored at coil.txt
+
+	volume = bs.read_target_volume(f"{module_name}_targetvol")
+	# reads the volume we created
+
+	bs.plot_fields(volume, (box, box, 2), (x, y, -1), 1, which_plane=plane, level=level, num_contours=50)
+	# plots the fields we just produced, feeding in the same box size and start points.
+	# plotting along the plane x = 5, with 50 contours
+
+	# print(np.sum(volume)/100)
+
 
 def make_arc(text, start, mid, stop, line_width=1.27, layer="F.Cu"):
 	start_x, start_y = start
@@ -391,6 +429,41 @@ def make_pinheader(text, x, y, layer="F.Cu", angle=0): # 90 is horizontal
 	)
     """
 	return text + pin
+
+
+def printUsage():
+    s = """
+    Usage:
+
+            python3 src/new_coil.py -option value
+
+                    -vN export an N-gonal inductor instead of default helical inductor
+
+                        i.e. -v3 for triangle, -v4 for square, -v6 for hexagon
+
+                    -i long  inner diameter of coil in microns
+
+                    -o long  outer diameter of coil in microns
+
+                    -w long  track width in microns
+
+                    -n long  number of turns
+
+                    -g long  track gap in microns
+
+                    -d long  via drill in mm
+
+                    -l long  length of segment used to approximate circular arc in microns
+
+                    -h prints this
+
+    Example usage:
+
+            python3 src/new_coil.py -o 50000 -w 1270 -v7 -n 5 -g 1270 -d 0.5
+
+            produces a heptagonal coil with 5 turns, 50 mm outer diameter, 1.27 mm track width, 1.27 mm track grap,  0.5 mm via drill
+    """
+    print(s)
 
 
 def print_to_file(outfile, text):
