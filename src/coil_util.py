@@ -1,6 +1,6 @@
 import math
 import numpy as np
-import biot_savart_v4_3 as bs
+from magnetic_util import *
 
 def initialize_file():
     return """(kicad_pcb
@@ -11,9 +11,13 @@ def initialize_file():
 		(thickness 1.6)
 		(legacy_teardrops no)
 	)
-	(paper "A4")
+	(paper "A5")
 	(layers
 		(0 "F.Cu" signal)
+		(1 "In1.Cu" signal)
+		(2 "In2.Cu" signal)
+		(3 "In3.Cu" signal)
+		(4 "In4.Cu" signal)
 		(31 "B.Cu" signal)
 		(32 "B.Adhes" user "B.Adhesive")
 		(33 "F.Adhes" user "F.Adhesive")
@@ -44,6 +48,89 @@ def initialize_file():
 		(58 "User.9" user)
 	)
 	(setup
+		(stackup
+			(layer "F.SilkS"
+				(type "Top Silk Screen")
+			)
+			(layer "F.Paste"
+				(type "Top Solder Paste")
+			)
+			(layer "F.Mask"
+				(type "Top Solder Mask")
+				(thickness 0.01)
+			)
+			(layer "F.Cu"
+				(type "copper")
+				(thickness 0.035)
+			)
+			(layer "dielectric 1"
+				(type "prepreg")
+				(thickness 0.1)
+				(material "FR4")
+				(epsilon_r 4.5)
+				(loss_tangent 0.02)
+			)
+			(layer "In1.Cu"
+				(type "copper")
+				(thickness 0.035)
+			)
+			(layer "dielectric 2"
+				(type "core")
+				(thickness 0.535)
+				(material "FR4")
+				(epsilon_r 4.5)
+				(loss_tangent 0.02)
+			)
+			(layer "In2.Cu"
+				(type "copper")
+				(thickness 0.035)
+			)
+			(layer "dielectric 3"
+				(type "prepreg")
+				(thickness 0.1)
+				(material "FR4")
+				(epsilon_r 4.5)
+				(loss_tangent 0.02)
+			)
+			(layer "In3.Cu"
+				(type "copper")
+				(thickness 0.035)
+			)
+			(layer "dielectric 4"
+				(type "core")
+				(thickness 0.535)
+				(material "FR4")
+				(epsilon_r 4.5)
+				(loss_tangent 0.02)
+			)
+			(layer "In4.Cu"
+				(type "copper")
+				(thickness 0.035)
+			)
+			(layer "dielectric 5"
+				(type "prepreg")
+				(thickness 0.1)
+				(material "FR4")
+				(epsilon_r 4.5)
+				(loss_tangent 0.02)
+			)
+			(layer "B.Cu"
+				(type "copper")
+				(thickness 0.035)
+			)
+			(layer "B.Mask"
+				(type "Bottom Solder Mask")
+				(thickness 0.01)
+			)
+			(layer "B.Paste"
+				(type "Bottom Solder Paste")
+			)
+			(layer "B.SilkS"
+				(type "Bottom Silk Screen")
+			)
+			(copper_finish "None")
+			(dielectric_constraints no)
+		)
 		(pad_to_mask_clearance 0)
 		(allow_soldermask_bridges_in_footprints no)
 		(pcbplotparams
@@ -107,31 +194,11 @@ def save_lines(start_x, start_y, end_x, end_y, save_arr):
 	save_arr.append(f"{start_x/10:.2f},{start_y/10:.2f},0,1")
 	#save_arr.append(f"{end_x:.2f},{end_y:.2f},0,1")
 
-def write_lines_to_file(file_name, lines):
-	d = open(file_name, 'w')
+def write_lines_to_file(file_name, lines, mode='w'):
+	d = open(file_name, mode)
 	for line in lines:
 		d.write(line + '\n')
 	d.close()
-
-def magnetic_field(module_name, left_upper_corner, diameter, plane, level):
-	x,y = left_upper_corner
-	box = diameter-1
-	bs.write_target_volume(f"{module_name}.txt", f"{module_name}_targetvol", (box, box, 2), (x, y, -1), 1, 1)
-	# generates a target volume from the coil stored at coil.txt
-	# uses a 30 x 15 x 15 bounding box, starting at (-5, -0.5, -2.5)
-	# uses 1 cm resolution
-
-	bs.plot_coil(f"{module_name}.txt")
-	# plots the coil stored at coil.txt
-
-	volume = bs.read_target_volume(f"{module_name}_targetvol")
-	# reads the volume we created
-
-	bs.plot_fields(volume, (box, box, 2), (x, y, -1), 1, which_plane=plane, level=level, num_contours=50)
-	# plots the fields we just produced, feeding in the same box size and start points.
-	# plotting along the plane x = 5, with 50 contours
-
-	# print(np.sum(volume)/100)
 
 
 def make_arc(text, start, mid, stop, line_width=1.27, layer="F.Cu"):
@@ -162,8 +229,7 @@ def make_via(text, x, y, width=1.27, drill=0.5, layers=None):
 		(drill {drill})
 		(layers {layer_str})
 		(net 0)
-	)
-    """
+	)"""
 	return text + via
 
 
@@ -464,6 +530,8 @@ def printUsage():
             produces a heptagonal coil with 5 turns, 50 mm outer diameter, 1.27 mm track width, 1.27 mm track grap,  0.5 mm via drill
     """
     print(s)
+
+
 
 
 def print_to_file(outfile, text):

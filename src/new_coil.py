@@ -1,73 +1,31 @@
+import argparse
 from math import log, pi, sqrt
-import math
 import sys
 from coil_util import *
 
-def main():
-    # some default values
-    innerDiameter = 27100  # microns
-    outerDiameter = 32000  # microns
-    segmentLength = 100  # 1mm length in microns
-    turnsTotal = 9
-    trackWidth = 1270  # microns
-    trackGap = 1270  # microns
-    drill = 0.5 # mm
-    straight = True # force second layer to have two straight lines to get to the pinheader instead of a diagonal one
-    vertices = 0
-    pos_x = 100 # x coordinate to start the coil at
-    pos_y = 100 # y coordinate to start the coil at
-    lines = [] # array to save all lines in
+def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, trackGap, drill, straight, vertices, pos_x, pos_y, layer, coil_only):
+    lines = []  # Array to save all lines
+    print(f"Running with parameters:\n"
+          f"Inner Diameter: {innerDiameter} µm\n"
+          f"Outer Diameter: {outerDiameter} µm\n"
+          f"Segment Length: {segmentLength} µm\n"
+          f"Turns Total: {turnsTotal}\n"
+          f"Track Width: {trackWidth} µm\n"
+          f"Track Gap: {trackGap} µm\n"
+          f"Drill: {drill} mm\n"
+          f"Straight: {straight}\n"
+          f"Vertices: {vertices}\n"
+          f"Start Position: ({pos_x}, {pos_y})")
 
-    # we now parse arguments parsed via the command line
-    if len(sys.argv) == 1:
-        printUsage()
-        sys.exit(0)
-
-    counter = 1
-    while counter < len(sys.argv):
-        if sys.argv[counter].startswith("-n"):
-            turnsTotal = float(sys.argv[counter + 1])
-            counter += 2
-        elif sys.argv[counter].startswith("-i"):
-            innerDiameter = int(sys.argv[counter + 1])
-            counter += 2
-        elif sys.argv[counter].startswith("-o"):
-            outerDiameter = int(sys.argv[counter + 1])
-            counter += 2
-        elif sys.argv[counter].startswith("-l"):
-            segmentLength = int(sys.argv[counter + 1])
-            counter += 2
-        elif sys.argv[counter].startswith("-w"):
-            trackWidth = int(sys.argv[counter + 1])
-            counter += 2
-        elif sys.argv[counter].startswith("-v"):
-            vertices = int(sys.argv[counter][2:])
-            if vertices in (1, 2):
-                print("Assuming inductor is helical.")
-                vertices = 0
-            counter += 1
-        elif sys.argv[counter].startswith("-g"):
-            trackGap = int(sys.argv[counter + 1])
-            counter += 2
-        elif sys.argv[counter].startswith("-d"):
-            drill = float(sys.argv[counter + 1])
-            counter += 2
-        elif sys.argv[counter].startswith("-s"):
-            straight = False
-            counter += 1
-        else:
-            printUsage()
-            sys.exit(0)
-
-    # some basic preliminaries for all scenarios
 
     # dynamically compute inner diameter s.t. outer diameter can be adhered to 
     if int(turnsTotal) == turnsTotal:
         innerDiameter = outerDiameter - 2.0 * (turnsTotal * trackWidth + (turnsTotal - 1) * trackGap)
     else:
         innerDiameter = outerDiameter - 2.0 * ((int(turnsTotal)+1) * trackWidth + (turnsTotal - 1) * trackGap)
-    startRadius = (innerDiameter)/2.0 
+    print(f"Adjusted inner diameter to: {innerDiameter} µm")
 
+    startRadius = (innerDiameter)/2.0 
     nextRadius = startRadius 
 
     # now some preliminaries for heliical inductors
@@ -88,55 +46,30 @@ def main():
 
     # we now define some flags
     nextTurnPlease = False 
-    
-    # if trackgap not given, calculate an appropriate one
-    if not trackGap:
-        if (turnsTotal > 1): # the usual scenario
-            trackGap = ((outerDiameter - innerDiameter)/2.0 - (turnsTotal*trackWidth))/(turnsTotal-1)  # nm
-        else: # stops a divide by zero error if only one loop requested
-            trackGap = (innerDiameter/2.0)  # i.e. startRadius
-
 
     radiusIncrementPerTurn = (trackWidth+trackGap) 
     radiusIncrementPerSegment = radiusIncrementPerTurn/(segmentsPerLoop) 
 
     # we use x1,y1,x2,y2 as variables for the beginning and end coords of line segments
-    x1 = 0 
-    y1 = 0 
-    x2 = 0 
-    y2 = 0 
+
     # we use x1scaled,y1scaled,x2scaled,y2scaled as variables for
     # the beginning and end coords of scaled helical coil segments
     # for capacitance length calculation
-    x1scaled = 0 
-    y1scaled = 0 
-    x2scaled = 0 
-    y2scaled = 0 
 
-    layerNumber = 15  # front for kicad
-
-    if vertices == 0:
-        moduleName = f"{turnsTotal}_turn_helical_inductor"
-    elif vertices == 3:
-        moduleName = f"{turnsTotal}_turn_triangular_inductor"
-    elif vertices == 4:
-        moduleName = f"{turnsTotal}_turn_square_inductor"
-    elif vertices == 5:
-        moduleName = f"{turnsTotal}_turn_pentagonal_inductor"
-    elif vertices == 6:
-        moduleName = f"{turnsTotal}_turn_hexagonal_inductor"
-    elif vertices == 7:
-        moduleName = f"{turnsTotal}_turn_heptagonal_inductor"
-    elif vertices == 8:
-        moduleName = f"{turnsTotal}_turn_octagonal_inductor"
-    elif vertices == 9:
-        moduleName = f"{turnsTotal}_turn_nonagonal_inductor"
-    elif vertices == 10:
-        moduleName = f"{turnsTotal}_turn_decagonal_inductor"
-    else:
-        moduleName = f"{turnsTotal}_turn_{vertices}_gon_inductor"
-    moduleName = "results/" + moduleName
-
+    # Define a mapping for known polygon names
+    polygon_names = {
+        0: "helical",
+        3: "triangular",
+        4: "square",
+        5: "pentagonal",
+        6: "hexagonal",
+        7: "heptagonal",
+        8: "octagonal",
+        9: "nonagonal",
+        10: "decagonal"
+    }
+    # Use the dictionary, defaulting to "{vertices}-gon" if not found
+    moduleName = f"results/{turnsTotal}_turn_{polygon_names.get(vertices, f'{vertices}-gon')}_inductor"
 
     outputFileName = moduleName + ".kicad_pcb" 
 
@@ -146,12 +79,10 @@ def main():
     print(f"Using track width of: {trackWidth} microns.")
     print(f"Using via drill size of: {drill} mm.")
 
-    footprintOutput = open(outputFileName, 'w')
+    footprintOutput = open(outputFileName, 'w') if not coil_only else open(outputFileName, 'a')
 
-    header_string = ""
-    header_string += initialize_file()
-
-    footprintOutput.write(header_string)
+    if not coil_only:
+        footprintOutput.write(initialize_file())
 
     currentLoopStartX = 0
     currentLoopStartY = 0
@@ -243,7 +174,7 @@ def main():
                 cumulativeCoilLengthMM += calculateSegmentLength(x1, y1, x2, y2)
 
                 # create coil line from (x1,y1) to (x2,y2)
-                line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, "F.Cu")
+                line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, layer)
                 save_lines(start_x=x1, start_y=y1, end_x=x2, end_y=y2, save_arr=lines)
                 footprintOutput.write(line)
 
@@ -294,7 +225,7 @@ def main():
                     start_y = y1
 
                 # create coil line from (x1,y1) to (x2,y2)
-                line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, "F.Cu")
+                line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, layer)
                 save_lines(start_x=x1, start_y=y1, end_x=x2, end_y=y2, save_arr=lines)
                 footprintOutput.write(line)
 
@@ -343,7 +274,7 @@ def main():
                 cumulativeCoilLengthMM += calculateSegmentLength(x1, y1, x2, y2)
 
                 # Output the segment
-                line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, "F.Cu")
+                line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, layer)
                 save_lines(start_x=x1, start_y=y1, end_x=x2, end_y=y2, save_arr=lines)
                 footprintOutput.write(line)
 
@@ -379,7 +310,7 @@ def main():
                 cumulativeCoilLengthMM += calculateSegmentLength(x1, y1, x2, y2)
 
                 # Output the segment
-                line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, "F.Cu")
+                line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, layer)
                 save_lines(start_x=x1, start_y=y1, end_x=x2, end_y=y2, save_arr=lines)
                 footprintOutput.write(line)
 
@@ -461,9 +392,9 @@ def main():
     if angle == 0 and x2 == x2 + x_offset and y2 < y2 + y_offset:
         vertical_first = True
 
-    line = make_pinheader("", x2, y2, "F.Cu", angle)
+    line = make_pinheader("", x2, y2, layer, angle) if not coil_only else ""
     
-    if straight: # connect bottom layer in vertical + horizontal lines only
+    if not coil_only and straight: # connect bottom layer in vertical + horizontal lines only
         if not vertical_first:
             # go vertical from origin
             line = make_line(line, start_x, start_y, x2+x_offset, start_y, trackWidthMM, layer="B.Cu")
@@ -480,7 +411,8 @@ def main():
             line = make_line(line, start_x, y2+y_offset, x2+x_offset, y2+y_offset, trackWidthMM, layer="B.Cu")
             #save_lines(start_x=start_x, start_y=y2+y_offset, end_x=x2+x_offset, end_y=y2+y_offset, save_arr=lines)
     else: # connect bottom layer diagonally
-        line = make_line(line, start_x, start_y, x2+x_offset, y2+y_offset, trackWidthMM, layer="B.Cu")
+        if not coil_only:
+            line = make_line(line, start_x, start_y, x2+x_offset, y2+y_offset, trackWidthMM, layer="B.Cu")
         #save_lines(start_x=start_x, start_y=start_y, end_x=x2+x_offset, end_y=y2+y_offset, save_arr=lines)
     # add via to the coil origin
     line = make_via(line, start_x, start_y, trackWidthMM, drill, layers=["F.Cu", "B.Cu"])
@@ -512,6 +444,37 @@ def main():
     print("Total calculated capacitance (pF): ", end="")
     print(f"{finalCapacitanceF * 1E12:.4f}")
 
+    # get variables to calculate inductance
+    greenhouseC1, greenhouseC2, greenhouseC3, greenhouseC4 = get_greenhouse_constants(vertices)
+
+    finalInductanceH = calculateInductance(turnsTotal, innerDiameter, outerDiameter, greenhouseC1, greenhouseC2, greenhouseC3, greenhouseC4)
+
+    print(f"Calculated inductance (Henries): {finalInductanceH}")
+    print("Calculated inductance (uH): ", end="")
+    print(f"{finalInductanceH * 1_000_000:.4f}")
+    print("Calculated self resonant frequency (Hz): ", end="")
+    print(f"{calculateSelfResonance(finalInductanceH, finalCapacitanceF):.0f}")
+    print("Calculated self resonant frequency (MHz): ", end="")
+    print(f"{calculateSelfResonance(finalInductanceH, finalCapacitanceF) / 1E6:.4f}")
+
+    # and we close the footprint file before finishing up
+    footprintOutput.write("\n)") if not coil_only else footprintOutput.write("\n")
+    footprintOutput.close()
+
+    # save last line of the coil and plot magnetic field
+    lines.append(f"{x2/10:.2f},{y2/10:.2f},0,1")
+    w_mode = 'w' if not coil_only else 'a'
+    write_lines_to_file(f"{moduleName}.txt", lines, mode=w_mode)
+    corner = (int(pos_x/10-outerDiameter/20000), int(pos_y/10-outerDiameter/20000))
+    #print(corner)
+    plane='z'
+    level = 0
+    if not coil_only:
+        magnetic_field(moduleName, corner, outerDiameter/10000, plane, level)
+
+
+
+def get_greenhouse_constants(vertices):
     # the following variables are used to calculate inductance
     # using the "Greenhouse" equation for flat "pancake" inductors
     # we set the default values to those needed for a helical coil
@@ -539,29 +502,7 @@ def main():
         print("Using inductance equation for circle due to a"
             " lack of published parameters\nfor the inductance of "
             f"{vertices} vertex inductors.")
-
-    finalInductanceH = calculateInductance(turnsTotal, innerDiameter, outerDiameter, greenhouseC1, greenhouseC2, greenhouseC3, greenhouseC4)
-
-    print(f"Calculated inductance (Henries): {finalInductanceH}")
-    print("Calculated inductance (uH): ", end="")
-    print(f"{finalInductanceH * 1_000_000:.4f}")
-    print("Calculated self resonant frequency (Hz): ", end="")
-    print(f"{calculateSelfResonance(finalInductanceH, finalCapacitanceF):.0f}")
-    print("Calculated self resonant frequency (MHz): ", end="")
-    print(f"{calculateSelfResonance(finalInductanceH, finalCapacitanceF) / 1E6:.4f}")
-
-    # and we close the footprint file before finishing up
-    footprintOutput.write("\n)")
-    footprintOutput.close()
-
-    # save last line of the coil and plot magnetic field
-    lines.append(f"{x2/10:.2f},{y2/10:.2f},0,1")
-    write_lines_to_file(f"{moduleName}.txt", lines)
-    corner = (int(pos_x/10-outerDiameter/20000)+1, int(pos_y/10-outerDiameter/20000)+1)
-    plane='z'
-    level = 1
-    magnetic_field(moduleName, corner, outerDiameter/10000, plane, level)
-    
+    return greenhouseC1, greenhouseC2, greenhouseC3, greenhouseC4
 
 
 def calculateSelfResonance(inductanceHenries, capacitance):
@@ -576,7 +517,6 @@ def calculateSelfResonance(inductanceHenries, capacitance):
 
 
 def calculateSegmentLength(xOne, yOne, xTwo, yTwo):
-
     lengthSquared = ((xOne - xTwo) * (xOne - xTwo))+((yOne - yTwo) * (yOne - yTwo)) 
     return sqrt(lengthSquared) 
 
@@ -617,4 +557,34 @@ def calculateInductance(turns, dIn, dOut, c1, c2, c3, c4):
 
 
 if __name__ == "__main__":
-    main()
+    description = """
+    Creates an inductive coil in KiCad format.
+    Example:
+            new_coil.py -o 50000 -w 1270 -v7 -n 5 -g 1270 -d 0.5
+
+            produces a heptagonal coil with 5 turns, 50 mm outer diameter, 1.27 mm track width, 1.27 mm track grap,  0.5 mm via drill"""
+    parser = argparse.ArgumentParser(description=description)
+
+    # Default values
+    parser.add_argument("-i", "--inner", type=int, default=25000, help="Inner diameter (µm)")
+    parser.add_argument("-o", "--outer", type=int, default=50000, help="Outer diameter (µm)")
+    parser.add_argument("-l", "--length", type=int, default=100, help="Segment length (µm)")
+    parser.add_argument("-n", "--turns", type=float, default=9, help="Total number of turns")
+    parser.add_argument("-w", "--width", type=int, default=1270, help="Track width (µm)")
+    parser.add_argument("-g", "--gap", type=int, default=1270, help="Track gap (µm)")
+    parser.add_argument("-d", "--drill", type=float, default=0.5, help="Drill size (mm)")
+    parser.add_argument("-s", "--straight", action="store_false", help="Use straight lines instead of diagonal")
+    parser.add_argument("-v", "--vertices", type=int, default=4, help="Vertices (0 for default, 1 or 2 assume helical)")
+    parser.add_argument("--pos_x", type=int, default=38, help="X coordinate to start coil")
+    parser.add_argument("--pos_y", type=int, default=38, help="Y coordinate to start coil")
+    parser.add_argument("--layer", type=str, default="F.Cu", help="which layer to put the coil on")
+    parser.add_argument("--coil_only", type=bool, default=False, help="only return the coil text, without initializing the file")
+
+    args = parser.parse_args()
+
+    # Handle special cases for `vertices`
+    if args.vertices in (1, 2):
+        print("Assuming inductor is helical.")
+        args.vertices = 0
+
+    main(args.inner, args.outer, args.length, args.turns, args.width, args.gap, args.drill, args.straight, args.vertices, args.pos_x, args.pos_y, args.layer, args.coil_only)
