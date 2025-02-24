@@ -106,7 +106,13 @@ def calculate_field(coil, x, y, z):
         mag = np.sqrt((x-mid[0])**2 + (y-mid[1])**2 + (z-mid[2])**2)
         # magnitude of the relative position vector
 
-        return start[3] * np.cross(dl[:3], position) / np.array((mag ** 3, mag ** 3, mag ** 3)).T
+        arr = np.array((mag ** 3, mag ** 3, mag ** 3)).T
+        # invalid value handling
+        arr[np.isnan(arr)] = 1
+        arr[np.isinf(arr)] = 1
+        arr[arr == 0] = 1
+
+        return start[3] * np.cross(dl[:3], position) / arr
         # Apply the Biot-Savart Law to get the differential magnetic field
         # current flowing in this segment is represented by start[3]
 
@@ -251,6 +257,12 @@ def plot_fields(Bfields,box_size,start_point,vol_resolution,which_plane='z',leve
     
     plt.tight_layout()
     fig.suptitle(f'plotted at {which_plane}={level}', fontsize=10)
+    # print(x_array, y_array, B_sliced[2])
+    # for y in range(len(B_sliced[2])):
+    #     # y'th array
+    #     # x'th elem in y'th array
+    #     for x in range(6):
+    #         print(f"({x+1}, {y+1}, {B_sliced[2][y][x]})")
 
     plt.show()
     

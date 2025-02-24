@@ -56,12 +56,18 @@ This repository is still a work in progress, current goals include
 - optimizing pinheader placement to take up the least amount of space, regardless of coil shape
     - find and handle all edge cases, especiall for random partial turns & circular coils
     - making the code for finding the optimal coil placement less redundant and more readable (implement method to reuse code instead of copying it multiple times as is currently the case)
+- add support for any type of pinheader
+    - swap out the hardcoded pinheader size with a parameter
+    - add support function s.t. a pinheader specification can be read from a file and inserted into the generated coil, read height/width of pinheader from that file to swap out the hardcoded height/width in the main code
 - combining approaches/ using a regular circular coil (made of arcs) instead of the one using small lines as approximations in new_coil.py?
     - for that, inductance calculation & line saving etc. would need to be made universal for all approaches (or at least some method would need to be introduced for the simple approaches)
 - restructuring & dividing code into separate python scripts to make code more readable
-- adding support for multiple layers! not just top and bottom Cu layers (this also requires adding the layer as parameter instead of the current hardcode in new_coil.py)
+- adding support for multiple layers! not just top and bottom Cu layers
+    - specifically handling coil overlap to avoid short circuits
 - optimize placement of multiple coils on a 10cm x 10cm PCB board (4 coils, each coil around 5cm x 5cm)
 - ensure outer diameter is always adhered to, for all shapes!
+    - inner or outer diameter? inner circle diameter is the one that is being adhered to in the current code
+    - maybe introduce parameter to decide between inner/outer circle diameter
 
 
 # References
@@ -70,6 +76,6 @@ a full list of references will be given once the project report is done (it will
 in the meantime, some of the code was heavily inspired by:
 - SpiralInductorFootprintGenerator.java v1.0 Copyright (C) 2015 Erich S. Heinzle, a1039181@gmail.com (https://github.com/erichVK5/SpiralInductorFootprintGenerator)
 And currently the magnetic field is plotted using (saved in biot_savart_v4_3.py)
-- https://github.com/vuthalab/biot-savart
+- Yin, M., & Zazo, R. (2020). Biot-Savart Magnetic Field Calculator (Version 4.3) [Computer software]. GitHub. Retrieved from https://github.com/vuthalab/biot-savart
 
 other references will follow soon

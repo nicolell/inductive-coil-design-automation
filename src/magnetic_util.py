@@ -5,7 +5,7 @@ in biot_savart_v4_3.py
 '''
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
+from matplotlib import cm
 from scipy.interpolate import griddata
 import biot_savart_v4_3 as bs
 
@@ -34,6 +34,16 @@ def plot_3d_fields(Bfields, box_size, start_point, vol_resolution, stride=2):
     Bx_sample = Bfields[::stride, ::stride, ::stride, 0]
     By_sample = Bfields[::stride, ::stride, ::stride, 1]
     Bz_sample = Bfields[::stride, ::stride, ::stride, 2]
+
+    # print("X Y Z Bx By Bz")
+    # for i in range(len(X_sample)):
+    #     #print(f"sample{i}:")
+    #     data = [zip(x,y,z,bx,by,bz) for x,y,z,bx,by,bz in zip(X_sample[i], Y_sample[i], Z_sample[i], Bx_sample[i], By_sample[i], Bz_sample[i])]
+    #     #print((f"{X_sample[i]} {Y_sample[i]} {Z_sample[i]} {Bx_sample[i]} {By_sample[i]} {Bz_sample[i]}"))
+    #     for d in data:
+    #         dd = list(d)
+    #         for ddd in dd:
+    #             print(ddd)
     
     # Create the 3D plot
     fig = plt.figure(figsize=(10, 8))
@@ -101,7 +111,7 @@ def plot_3d_fields2(Bfields, box_size, start_point, vol_resolution, stride=2):
     ax = fig.add_subplot(111, projection='3d')
     
     # Plot the surface with coloring based on the magnitude of the magnetic field
-    surf = ax.plot_surface(grid_x, grid_y, grid_z, cmap=cm.viridis, linewidth=0, antialiased=True)
+    surf = ax.plot_surface(grid_x, grid_y, grid_z, cmap=cm.coolwarm, linewidth=0, antialiased=True)
     
     # Add a color bar which maps values to colors
     fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5)
@@ -126,6 +136,7 @@ def plot_3d_fields3(Bfields, box_size, start_point, vol_resolution, stride=1, le
 
     # Extract the Bz component for plotting
     Bz = Bfields[:, :, :, 2]
+    #print(Bz)
 
     # Flatten the grid and Bz data for 3D plotting
     X_flat = X.flatten()
@@ -138,7 +149,7 @@ def plot_3d_fields3(Bfields, box_size, start_point, vol_resolution, stride=1, le
     X_flat = X_flat[mask_level]
     Y_flat = Y_flat[mask_level]
     Bz_flat = Bz_flat[mask_level]
-
+    # print(Bz_flat)
     # Normalize Bz intensity so that the maximum value is 1
     Bz_flat_normalized = Bz_flat / np.max(np.abs(Bz_flat))
 
@@ -152,7 +163,10 @@ def plot_3d_fields3(Bfields, box_size, start_point, vol_resolution, stride=1, le
 
     # Interpolate Bz intensity onto the finer regular grid
     grid_Bz_normalized = griddata((X_flat, Y_flat), Bz_flat_normalized, (grid_x, grid_y), method='cubic')
-
+    # print(grid_Bz_normalized)
+    # coords = zip(grid_x, grid_y, grid_Bz_normalized)
+    # for tup in coords:
+    #     print(tup)
     # Create a 3D plot
     fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111, projection='3d')
@@ -320,7 +334,7 @@ def magnetic_field(module_name, left_upper_corner, diameter, plane, level):
 	# reads the volume we created
 
 	bs.plot_fields(volume, (box, box, 2), (x, y, -1), 1, which_plane=plane, level=level, num_contours=50)
-	bs.plot_fields(volume, (box, box, 2), (x, y, -1), 1, which_plane=plane, level=1, num_contours=50) # 2d plot
+	# bs.plot_fields(volume, (box, box, 2), (x, y, -1), 1, which_plane=plane, level=1, num_contours=50) # 2d plot
 	# plot_3d_fields_surface(volume, (box, box, 2), (x, y, -1), vol_resolution=1, stride=1) # magnitude at multiple levels
 	plot_3d_fields(volume, (box, box, 2), (x, y, -1), vol_resolution=1, stride=1) # quiver plot of (Bx, By, Bz) in 3 dimensions
 	# plot_3d_fields2(volume, (box, box, 2), (x, y, -1), vol_resolution=1, stride=1) # magnitude at multiple levels

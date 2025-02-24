@@ -2,6 +2,7 @@ import argparse
 from math import log, pi, sqrt
 import sys
 from coil_util import *
+from numpy import linalg as LA
 
 def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, trackGap, drill, straight, vertices, pos_x, pos_y, layer, coil_only):
     lines = []  # Array to save all lines
@@ -121,7 +122,13 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
 
             # we figure out the radius at a vertex using some trigonometry
             nextRadius = startRadius / math.cos(math.pi / vertices) + (spiralCounter * (radiusIncrementPerTurn / math.cos(math.pi / vertices)))
-
+            # TODO adhere to outer or inner diameter??
+            # if nextRadius > outerDiameter / 2:
+            #     print(nextRadius + radiusIncrementPerTurn)
+            #     print(outerDiameter / 2)
+            #     print("oh no")
+            #     break
+            print(nextRadius/1000, "cm")
             # we step through, one vertex after another, until we complete a turn
             for vertexCount in range(vertices):
                 if vertexCount < (vertices - 2):
@@ -326,6 +333,21 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
     down = int(y1) < int(y2)
     vertical_first = True
     y_offset, x_offset, angle = 0, 0, 0
+
+    # calculate direction of last line to add extra space for the pinheader if needed
+    # to prevent overlapping with the coil
+    vec = (x2-x1, y2-y1)
+    direction = vec / LA.norm(vec)
+    x1 = x2
+    y1 = y2
+    extra_space = 2 - radiusIncrementPerTurn/1000
+    if extra_space > 0:
+        y2 += extra_space * direction[1]
+        x2 += extra_space * direction[0]
+        line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, layer)
+        save_lines(start_x=x1, start_y=y1, end_x=x2, end_y=y2, save_arr=lines)
+        footprintOutput.write(line)
+
     if left: # last line goes left
         if down: # down
             print(y2, y_max)
@@ -335,7 +357,7 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
             else:
                 y_offset = +2.54
         else:  # only left
-            print(int(x2) , int(outerDiameter/1000 + x_max - pos_x + (trackGap+ trackWidth)/1000))
+            # print(int(x2) , int(outerDiameter/1000 + x_max - pos_x + (trackGap+ trackWidth)/1000))
             if int(x2) < int(outerDiameter/1000 + x_max - pos_x + (trackGap+ trackWidth)/1000): # nothing left -> vertical
                 y_offset = +2.54
             else:
