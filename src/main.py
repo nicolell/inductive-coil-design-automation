@@ -1,10 +1,9 @@
 import argparse
 from math import log, pi, sqrt
-import sys
 from coil_util import *
 from numpy import linalg as LA
 
-def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, trackGap, drill, straight, vertices, pos_x, pos_y, layer, coil_only):
+def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, trackGap, drill, straight, vertices, pos_x, pos_y, layer, coil_only, via_outer, no_plots):
     lines = []  # Array to save all lines
     print(f"Running with parameters:\n"
           f"Inner Diameter: {innerDiameter} µm\n"
@@ -13,11 +12,14 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
           f"Turns Total: {turnsTotal}\n"
           f"Track Width: {trackWidth} µm\n"
           f"Track Gap: {trackGap} µm\n"
-          f"Drill: {drill} mm\n"
+          f"Via Drill: {drill} µm\n"
+          f"Via Outer Size: {via_outer} µm\n"
           f"Straight: {straight}\n"
           f"Vertices: {vertices}\n"
-          f"Start Position: ({pos_x}, {pos_y})")
+          f"Start Position: ({pos_x}, {pos_y}) in mm")
 
+    drill /= 1000.0
+    via_outer /= 1000.0
 
     # dynamically compute inner diameter s.t. outer diameter can be adhered to 
     if int(turnsTotal) == turnsTotal:
@@ -34,10 +36,6 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
     # the loop spacings based on the inner and outer dimensions given
     theta = 0 
     nextTheta = 0 
-
-    # we figure out the circumference, well, at least a reasonable
-    # approximation of a real number using the set of long integers
-    # circumference = pi * outerDiameter 
 
     # we base segments per loop on the outermost loop circumference
     segmentsPerLoop = pi*outerDiameter/segmentLength 
@@ -85,9 +83,6 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
     if not coil_only:
         footprintOutput.write(initialize_file())
 
-    currentLoopStartX = 0
-    currentLoopStartY = 0
-
     trackWidthMM = trackWidth / 1000.0
     trackGapMM = trackGap / 1000.0
 
@@ -109,7 +104,6 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
     y_max = 0
     # Loop for full turns
     for spiralCounter in range(fullTurns):
-
         if vertices != 0:  # we are making an n-gon, as opposed to a helical coil
             # the following if then else structure figures out a starting theta
             # for the n-gon in an attempt to give an aesthetically pleasing coil
@@ -122,13 +116,7 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
 
             # we figure out the radius at a vertex using some trigonometry
             nextRadius = startRadius / math.cos(math.pi / vertices) + (spiralCounter * (radiusIncrementPerTurn / math.cos(math.pi / vertices)))
-            # TODO adhere to outer or inner diameter??
-            # if nextRadius > outerDiameter / 2:
-            #     print(nextRadius + radiusIncrementPerTurn)
-            #     print(outerDiameter / 2)
-            #     print("oh no")
-            #     break
-            print(nextRadius/1000, "cm")
+
             # we step through, one vertex after another, until we complete a turn
             for vertexCount in range(vertices):
                 if vertexCount < (vertices - 2):
@@ -160,12 +148,9 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
                 y2 += pos_y
                 # keep track of minimum & maximum x, y values for pinheader placement
                 if vertexCount < vertices -1:
-                    x_max = x1 if x1 > x_max else x_max
-                    x_max = x2 if x2 > x_max else x_max
-                    y_min = y1 if y1 < y_min else y_min
-                    y_min = y2 if y2 < y_min else y_min
-                    y_max = y1 if y1 > y_max else y_max
-                    y_max = y2 if y2 > y_max else y_max
+                    x_max = max(x1, x2, x_max)
+                    y_min = min(y1, y2, y_min)
+                    y_max = max(y1, y2, y_max)
 
                 if spiralCounter == 0 and vertexCount == 0:
                     start_x = x1
@@ -210,12 +195,9 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
                 y1 += pos_y
                 y2 += pos_y
                 # keep track of minimum & maximum x, y values for pinheader placement
-                x_max = x1 if x1 > x_max else x_max
-                x_max = x2 if x2 > x_max else x_max
-                y_min = y1 if y1 < y_min else y_min
-                y_min = y2 if y2 < y_min else y_min
-                y_max = y1 if y1 > y_max else y_max
-                y_max = y2 if y2 > y_max else y_max
+                x_max = max(x1, x2, x_max)
+                y_min = min(y1, y2, y_min)
+                y_max = max(y1, y2, y_max)
 
                 # there is only capacitance between turns, so we stop summing
                 # capacitor length at (turnsTotal - 1)
@@ -270,12 +252,9 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
                 y2 += pos_y
                 # keep track of minimum & maximum x, y values for pinheader placement
                 if vertexCount < numVerticesFractional -1:
-                    x_max = x1 if x1 > x_max else x_max
-                    x_max = x2 if x2 > x_max else x_max
-                    y_min = y1 if y1 < y_min else y_min
-                    y_min = y2 if y2 < y_min else y_min
-                    y_max = y1 if y1 > y_max else y_max
-                    y_max = y2 if y2 > y_max else y_max
+                    x_max = max(x1, x2, x_max)
+                    y_min = min(y1, y2, y_min)
+                    y_max = max(y1, y2, y_max)
 
                 # Add the segment length to the total coil length
                 cumulativeCoilLengthMM += calculateSegmentLength(x1, y1, x2, y2)
@@ -306,12 +285,9 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
                 y2 += pos_y
                 # keep track of minimum & maximum x, y values for pinheader placement
                 if nextTheta < fractionalAngle:
-                    x_max = x1 if x1 > x_max else x_max
-                    x_max = x2 if x2 > x_max else x_max
-                    y_min = y1 if y1 < y_min else y_min
-                    y_min = y2 if y2 < y_min else y_min
-                    y_max = y1 if y1 > y_max else y_max
-                    y_max = y2 if y2 > y_max else y_max
+                    x_max = max(x1, x2, x_max)
+                    y_min = min(y1, y2, y_min)
+                    y_max = max(y1, y2, y_max)
 
                 # Add the segment length to the total coil length
                 cumulativeCoilLengthMM += calculateSegmentLength(x1, y1, x2, y2)
@@ -341,7 +317,7 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
     x1 = x2
     y1 = y2
     extra_space = 2 - radiusIncrementPerTurn/1000
-    if extra_space > 0:
+    if extra_space > 0 and not coil_only:
         y2 += extra_space * direction[1]
         x2 += extra_space * direction[0]
         line = make_line("", f"{x1:.3f}", f"{y1:.3f}", f"{x2:.3f}", f"{y2:.3f}", trackWidthMM, layer)
@@ -357,7 +333,6 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
             else:
                 y_offset = +2.54
         else:  # only left
-            # print(int(x2) , int(outerDiameter/1000 + x_max - pos_x + (trackGap+ trackWidth)/1000))
             if int(x2) < int(outerDiameter/1000 + x_max - pos_x + (trackGap+ trackWidth)/1000): # nothing left -> vertical
                 y_offset = +2.54
             else:
@@ -367,11 +342,8 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
     elif right:
         if down:
             if int(y2) > int(y_max): # nothing below -> horizontal pinheader possible
-               # if int(x2) - 5 > int(x_max): # enough space to the left
                 x_offset = -2.54
                 angle = 90
-                #else:
-                #    y_offset = +2.54
             else:
                 x2 += 2.54
                 angle = 90
@@ -420,26 +392,21 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
         if not vertical_first:
             # go vertical from origin
             line = make_line(line, start_x, start_y, x2+x_offset, start_y, trackWidthMM, layer="B.Cu")
-            #save_lines(start_x=start_x, start_y=start_y, end_x=x2+x_offset, end_y=start_y, save_arr=lines)
-            
             # go horizontal from previous line
             line = make_line(line, x2+x_offset, start_y, x2+x_offset, y2+y_offset, trackWidthMM, layer="B.Cu")
-            #save_lines(start_x=x2+x_offset, start_y=start_y, end_x=x2+x_offset, end_y=y2+y_offset, save_arr=lines)
         else:
             # go horizontal from origin
             line = make_line(line, start_x, start_y, start_x, y2+y_offset, trackWidthMM, layer="B.Cu")
-            #save_lines(start_x=start_x, start_y=start_y, end_x=start_x, end_y=y2+y_offset, save_arr=lines)
             # go vertical from previous line
             line = make_line(line, start_x, y2+y_offset, x2+x_offset, y2+y_offset, trackWidthMM, layer="B.Cu")
-            #save_lines(start_x=start_x, start_y=y2+y_offset, end_x=x2+x_offset, end_y=y2+y_offset, save_arr=lines)
     else: # connect bottom layer diagonally
         if not coil_only:
             line = make_line(line, start_x, start_y, x2+x_offset, y2+y_offset, trackWidthMM, layer="B.Cu")
-        #save_lines(start_x=start_x, start_y=start_y, end_x=x2+x_offset, end_y=y2+y_offset, save_arr=lines)
-    # add via to the coil origin
-    line = make_via(line, start_x, start_y, trackWidthMM, drill, layers=["F.Cu", "B.Cu"])
+    if not coil_only: # place via at beginning of first line
+        line = make_via(line, start_x, start_y, via_outer, drill, layers=["F.Cu", "B.Cu"])
+    else: # place via into middle point of the coil
+        line = make_via(line, pos_x, pos_y, via_outer, drill, layers=["F.Cu", "B.Cu"])
     footprintOutput.write(line)
-
 
     print(f"Outer diameter of coil (mm): {outerDiameter / 1000.0}")
     print(f"Inner diameter of coil (mm): {innerDiameter / 1000.0}")
@@ -487,13 +454,12 @@ def main(innerDiameter, outerDiameter, segmentLength, turnsTotal, trackWidth, tr
     lines.append(f"{x2/10:.2f},{y2/10:.2f},0,1")
     w_mode = 'w' if not coil_only else 'a'
     write_lines_to_file(f"{moduleName}.txt", lines, mode=w_mode)
-    corner = (int(pos_x/10-outerDiameter/20000), int(pos_y/10-outerDiameter/20000))
-    #print(corner)
     plane='z'
     level = 0
-    if not coil_only:
-        magnetic_field(moduleName, corner, outerDiameter/10000, plane, level)
-
+    if not no_plots:
+        diam = outerDiameter/10000 
+        rad = diam / 2 
+        magnetic_field(moduleName, (pos_x/10-rad, pos_y/10-rad), diam, plane, level)
 
 
 def get_greenhouse_constants(vertices):
@@ -582,31 +548,32 @@ if __name__ == "__main__":
     description = """
     Creates an inductive coil in KiCad format.
     Example:
-            new_coil.py -o 50000 -w 1270 -v7 -n 5 -g 1270 -d 0.5
+            main.py -o 50000 -w 1270 -v 7 -n 5 -g 1270 -d 0.5
 
-            produces a heptagonal coil with 5 turns, 50 mm outer diameter, 1.27 mm track width, 1.27 mm track grap,  0.5 mm via drill"""
+            produces a heptagonal coil with 5 turns, 50 mm outer diameter, 1.27 mm track width, 1.27 mm track grap,  0.5 mm via drill and plots its magnetic field"""
     parser = argparse.ArgumentParser(description=description)
 
-    # Default values
     parser.add_argument("-i", "--inner", type=int, default=25000, help="Inner diameter (µm)")
     parser.add_argument("-o", "--outer", type=int, default=50000, help="Outer diameter (µm)")
     parser.add_argument("-l", "--length", type=int, default=100, help="Segment length (µm)")
-    parser.add_argument("-n", "--turns", type=float, default=9, help="Total number of turns")
+    parser.add_argument("-n", "--turns", type=float, default=9, help="Number of turns")
     parser.add_argument("-w", "--width", type=int, default=1270, help="Track width (µm)")
     parser.add_argument("-g", "--gap", type=int, default=1270, help="Track gap (µm)")
-    parser.add_argument("-d", "--drill", type=float, default=0.5, help="Drill size (mm)")
-    parser.add_argument("-s", "--straight", action="store_false", help="Use straight lines instead of diagonal")
-    parser.add_argument("-v", "--vertices", type=int, default=4, help="Vertices (0 for default, 1 or 2 assume helical)")
-    parser.add_argument("--pos_x", type=int, default=38, help="X coordinate to start coil")
-    parser.add_argument("--pos_y", type=int, default=38, help="Y coordinate to start coil")
-    parser.add_argument("--layer", type=str, default="F.Cu", help="which layer to put the coil on")
-    parser.add_argument("--coil_only", type=bool, default=False, help="only return the coil text, without initializing the file")
+    parser.add_argument("-d", "--drill", type=float, default=0.15, help="Via drill size (µm")
+    parser.add_argument("--via_outer", type=float, default=0.25, help="Via drill size (µm")
+    parser.add_argument("-s", "--straight", action="store_false", help="Use straight lines instead of diagonal to connect the bottom layer to the via")
+    parser.add_argument("-v", "--vertices", type=int, default=4, help="Vertices (0 for default, 1 or 2 assume circular)")
+    parser.add_argument("--pos_x", type=int, default=38, help="X coordinate (mm) to start coil")
+    parser.add_argument("--pos_y", type=int, default=38, help="Y coordinate (mm) to start coil")
+    parser.add_argument("--layer", type=str, default="F.Cu", help="Which layer to put the coil on")
+    parser.add_argument("--coil_only", type=bool, default=False, help="Only return the coil text, without initializing the PCB layout")
+    parser.add_argument("--no_plots", help="Plot magnetic field", default=False, action="store_true")
 
     args = parser.parse_args()
 
-    # Handle special cases for `vertices`
-    if args.vertices in (1, 2):
-        print("Assuming inductor is helical.")
+    # if vertices <= 2 assume user wants circular coil
+    if args.vertices <= 2:
+        print("Assuming inductor is circular.")
         args.vertices = 0
 
-    main(args.inner, args.outer, args.length, args.turns, args.width, args.gap, args.drill, args.straight, args.vertices, args.pos_x, args.pos_y, args.layer, args.coil_only)
+    main(args.inner, args.outer, args.length, args.turns, args.width, args.gap, args.drill, args.straight, args.vertices, args.pos_x, args.pos_y, args.layer, args.coil_only, args.via_outer, args.no_plots)

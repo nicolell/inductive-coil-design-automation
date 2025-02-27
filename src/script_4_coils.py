@@ -1,7 +1,7 @@
 '''
 create 4 coils across 4 Cu layers on the same PCB board
 '''
-from new_coil import * 
+from main import * 
 polygon_names = {
         0: "helical",
         3: "triangular",
@@ -14,6 +14,7 @@ polygon_names = {
         10: "decagonal"
 }
 if __name__ == '__main__':
+    # adjust/add parameters as needed:
     turnsTotal = 9
     vertices = 4
     outer = 47000
@@ -25,10 +26,10 @@ if __name__ == '__main__':
     print(outputFileName)
     fd.write(initialize_file())
     fd.close()
-    main(0, outer, 100, turnsTotal, 1270, 1270, 0.5, True, vertices, 38, 38, "In1.Cu", coil_only=True)
-    main(0, outer, 100, turnsTotal, 1270, 1270, 0.5, True, vertices, 90, 38, "In2.Cu", coil_only=True)
-    main(0, outer, 100, turnsTotal, 1270, 1270, 0.5, True, vertices, 38, 90, "In3.Cu", coil_only=True)
-    main(0, outer, 100, turnsTotal, 1270, 1270, 0.5, True, vertices, 90, 90, "In4.Cu", coil_only=True)
+    main(0, outer, 100, turnsTotal, 1270, 1270, 150, True, vertices, 38, 38, "In1.Cu", coil_only=True, no_plots=False, via_outer=250)
+    main(0, outer, 100, turnsTotal, 1270, 1270, 150, True, vertices, 90, 38, "In2.Cu", coil_only=True, no_plots=True, via_outer=250)
+    main(0, outer, 100, turnsTotal, 1270, 1270, 150, True, vertices, 38, 90, "In3.Cu", coil_only=True, no_plots=True, via_outer=250)
+    main(0, outer, 100, turnsTotal, 1270, 1270, 150, True, vertices, 90, 90, "In4.Cu", coil_only=True, no_plots=True, via_outer=250)
     fd = open(outputFileName, 'a')
     fd.write(")")
     fd.close()

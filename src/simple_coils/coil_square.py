@@ -1,9 +1,7 @@
-from coil_util import *
 from coil import *
 
 class Square_Coil(Coil):
     def make_full_turns(self, start_x, start_y, initial_diameter):
-        text = initialize_file()
         x = start_x
         y = start_y
         offset = initial_diameter
@@ -37,7 +35,7 @@ class Square_Coil(Coil):
 
             # Reduce offset again for the next loop
             offset -= self.spacing + self.size
-        print("inner diameter:", round(inner_diam,2))
+        print("Inner diameter:", round(inner_diam,2))
         return lines, offset, x, y
 
 
@@ -56,7 +54,6 @@ class Square_Coil(Coil):
             offset -= self.spacing + self.size
             initial_offset = offset - (self.spacing + self.size)
             self.text = make_line(self.text, x, y, x + offset, y, self.size, self.layers[0])  # Go right
-            #lines.append((x, y, x + offset, y))
             x += offset  # Update x to end of this line
 
             self.text = make_line(self.text, x, y, x, y + offset, self.size, self.layers[0])  # Go up
@@ -79,7 +76,6 @@ class Square_Coil(Coil):
             # use full offset for partial turn
             initial_offset = offset - (self.spacing + self.size)
             self.text = make_line(self.text, x, y, x + offset, y, self.size, self.layers[0])  # Go right
-            # lines.append((x, y, x + offset, y))
             x += offset  # Update x to end of this line
 
             self.text = make_line(self.text, x, y, x, y + offset, self.size, self.layers[0])  # Go up
@@ -105,7 +101,6 @@ class Square_Coil(Coil):
             self.text = make_line(self.text, x, y, x, y + offset * frac_turn, self.size, self.layers[0])  # Go up
             self.lines.append((x, y, x, y + offset * frac_turn))
             y += offset * frac_turn  # Update y to end of this line
-
 
             final_x = x
             final_y = y # - offset * frac_turn
@@ -153,8 +148,6 @@ class Square_Coil(Coil):
         else:
             pin_x = final_x
             pin_y = final_y
-            #pin_x += -2.54 if last_dir == 0 else 0
-            #pin_y += 0 if last_dir == 0 else 
         
         # connect bottom layer to via and pinheader
         if int(self.turns) - self.turns == 0:
@@ -178,12 +171,13 @@ class Square_Coil(Coil):
 
 if __name__ == '__main__':
     # adjust parameters as needed
-    diameter = 45
-    spacing = 1.27
-    size = 1.27
-    turns = 9
+    diameter = 45 # mm
+    spacing = 1.27 # mm
+    size = 1.27 # mm
+    turns = 9 
     NAME = f'results/{turns}_turn_square_coil'
 
     square = Square_Coil(diameter=diameter, spacing=spacing, size=size, turns=turns)
     text = square.create_coil()
     print_to_file(outfile=NAME, text=text)
+    print("Coil in file: ", NAME)

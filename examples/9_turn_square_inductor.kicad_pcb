@@ -1,8 +1,4 @@
-from magnetic_util import *
-import math
-
-def initialize_file():
-    return """(kicad_pcb
+(kicad_pcb
 	(version 20240108)
 	(generator "pcbnew")
 	(generator_version "8.0")
@@ -171,70 +167,266 @@ def initialize_file():
 		)
 	)
 	(net 0 "")
-"""
-
-def make_line(text, start_x, start_y, end_x, end_y, line_width=1.27, layer="F.Cu"):
-    seg = f"""(segment
-		(start {start_x} {start_y})
-		(end {end_x} {end_y})
-		(width {line_width})
-		(layer "{layer}")
+(segment
+		(start 41.410 41.410)
+		(end 34.590 41.410)
+		(width 1.27)
+		(layer "F.Cu")
 		(net 0)
 	)
-"""
-    return text + seg
-
-def save_lines(start_x, start_y, end_x, end_y, save_arr):
-	save_arr.append(f"{start_x/10:.2f},{start_y/10:.2f},0,1")
-
-def write_lines_to_file(file_name, lines, mode='w'):
-	d = open(file_name, mode)
-	for line in lines:
-		d.write(line + '\n')
-	d.close()
-
-
-def make_arc(text, start, mid, stop, line_width=1.27, layer="F.Cu"):
-	start_x, start_y = start
-	mid_x, mid_y = mid
-	stop_x, stop_y = stop
-	seg = f"""(gr_arc
-		(start {start_x} {start_y})
-		(mid {mid_x} {mid_y})
-		(end {stop_x} {stop_y})
-		(stroke
-			(width {line_width})
-			(type default)
-		)
-		(layer "{layer}")
-	)
-	"""
-	return text + seg
-    
-def make_via(text, x, y, width=1.27, drill=0.5, layers=None):
-	if layers is None:
-		layers = ["F.Cu", "B.Cu"]
-	layers = [f"\"{l}\"" for l in layers]
-	layer_str = ' '.join(layers)
-	via = f"""(via
-		(at {x} {y})
-		(size {width})
-		(drill {drill})
-		(layers {layer_str})
+(segment
+		(start 34.590 41.410)
+		(end 34.590 34.590)
+		(width 1.27)
+		(layer "F.Cu")
 		(net 0)
-	)"""
-	return text + via
-
-
-def make_pinheader(text, x, y, layer="F.Cu", angle=0): # 90 is horizontal
-	pin = f"""(footprint "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
-		(layer "{layer}")
+	)
+(segment
+		(start 34.590 34.590)
+		(end 43.950 34.590)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 43.950 34.590)
+		(end 43.950 43.950)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 43.950 43.950)
+		(end 32.050 43.950)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 32.050 43.950)
+		(end 32.050 32.050)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 32.050 32.050)
+		(end 46.490 32.050)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 46.490 32.050)
+		(end 46.490 46.490)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 46.490 46.490)
+		(end 29.510 46.490)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 29.510 46.490)
+		(end 29.510 29.510)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 29.510 29.510)
+		(end 49.030 29.510)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 49.030 29.510)
+		(end 49.030 49.030)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 49.030 49.030)
+		(end 26.970 49.030)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 26.970 49.030)
+		(end 26.970 26.970)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 26.970 26.970)
+		(end 51.570 26.970)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 51.570 26.970)
+		(end 51.570 51.570)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 51.570 51.570)
+		(end 24.430 51.570)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 24.430 51.570)
+		(end 24.430 24.430)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 24.430 24.430)
+		(end 54.110 24.430)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 54.110 24.430)
+		(end 54.110 54.110)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 54.110 54.110)
+		(end 21.890 54.110)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 21.890 54.110)
+		(end 21.890 21.890)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 21.890 21.890)
+		(end 56.650 21.890)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 56.650 21.890)
+		(end 56.650 56.650)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 56.650 56.650)
+		(end 19.350 56.650)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 19.350 56.650)
+		(end 19.350 19.350)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 19.350 19.350)
+		(end 59.190 19.350)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 59.190 19.350)
+		(end 59.190 59.190)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 59.190 59.190)
+		(end 16.810 59.190)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 16.810 59.190)
+		(end 16.810 16.810)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 16.810 16.810)
+		(end 61.730 16.810)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 61.730 16.810)
+		(end 61.730 61.730)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 61.730 61.730)
+		(end 14.270 61.730)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 14.270 61.730)
+		(end 14.270 14.270)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 14.270 14.270)
+		(end 64.270 14.270)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(segment
+		(start 64.270 14.270)
+		(end 64.270 64.270)
+		(width 1.27)
+		(layer "F.Cu")
+		(net 0)
+	)
+(footprint "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
+		(layer "F.Cu")
 		(uuid "6eb7a419-c70b-48ac-bdb9-ad2a813fb730")
-		(at {x} {y} -{angle})
+		(at 64.27 64.26999999999998 -90)
 		(descr "Through hole straight pin header, 1x02, 2.54mm pitch, single row")
 		(tags "Through hole pin header THT 1x02 2.54mm single row")
 		(property "Reference" "REF**"
-			(at 2.54 -2.54 {angle})
+			(at 2.54 -2.54 90)
 			(layer "F.SilkS")
 			(uuid "0680d32b-a290-48eb-93ca-355456b61191")
 			(effects
@@ -245,7 +437,7 @@ def make_pinheader(text, x, y, layer="F.Cu", angle=0): # 90 is horizontal
 			)
 		)
 		(property "Value" "PinHeader_1x02_P2.54mm_Vertical"
-			(at 0 4.87 {angle})
+			(at 0 4.87 90)
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "740ee695-8230-4635-945d-42ac37bfcb3c")
@@ -257,7 +449,7 @@ def make_pinheader(text, x, y, layer="F.Cu", angle=0): # 90 is horizontal
 			)
 		)
 		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
-			(at 0 0 -{angle})
+			(at 0 0 -90)
 			(unlocked yes)
 			(layer "F.Fab")
 			(hide yes)
@@ -270,7 +462,7 @@ def make_pinheader(text, x, y, layer="F.Cu", angle=0): # 90 is horizontal
 			)
 		)
 		(property "Datasheet" ""
-			(at 0 0 -{angle})
+			(at 0 0 -90)
 			(unlocked yes)
 			(layer "F.Fab")
 			(hide yes)
@@ -283,7 +475,7 @@ def make_pinheader(text, x, y, layer="F.Cu", angle=0): # 90 is horizontal
 			)
 		)
 		(property "Description" ""
-			(at 0 0 -{angle})
+			(at 0 0 -90)
 			(unlocked yes)
 			(layer "F.Fab")
 			(hide yes)
@@ -445,8 +637,7 @@ def make_pinheader(text, x, y, layer="F.Cu", angle=0): # 90 is horizontal
 			)
 			(layer "F.Fab")
 			(uuid "3ec9be6e-75d5-4c17-b487-825ff9c2c8fa")
-		)"""
-	pin += """
+		)
 		(fp_text user "${REFERENCE}"
 			(at 0 1.27 0)
 			(layer "F.Fab")
@@ -486,11 +677,25 @@ def make_pinheader(text, x, y, layer="F.Cu", angle=0): # 90 is horizontal
 			)
 		)
 	)
-    """
-	return text + pin
-
-
-def print_to_file(outfile, text):
-	with open(f'{outfile}.kicad_pcb', 'w') as outfile:
-            outfile.write(text + "\n)")
-            outfile.close()
+    (segment
+		(start 41.41 41.41)
+		(end 41.41 64.26999999999998)
+		(width 1.27)
+		(layer "B.Cu")
+		(net 0)
+	)
+(segment
+		(start 41.41 64.26999999999998)
+		(end 61.73 64.26999999999998)
+		(width 1.27)
+		(layer "B.Cu")
+		(net 0)
+	)
+(via
+		(at 41.41 41.41)
+		(size 0.00025)
+		(drill 0.00015)
+		(layers "F.Cu" "B.Cu")
+		(net 0)
+	)
+)

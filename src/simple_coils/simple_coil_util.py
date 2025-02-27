@@ -1,6 +1,3 @@
-from magnetic_util import *
-import math
-
 def initialize_file():
     return """(kicad_pcb
 	(version 20240108)
@@ -183,15 +180,6 @@ def make_line(text, start_x, start_y, end_x, end_y, line_width=1.27, layer="F.Cu
 	)
 """
     return text + seg
-
-def save_lines(start_x, start_y, end_x, end_y, save_arr):
-	save_arr.append(f"{start_x/10:.2f},{start_y/10:.2f},0,1")
-
-def write_lines_to_file(file_name, lines, mode='w'):
-	d = open(file_name, mode)
-	for line in lines:
-		d.write(line + '\n')
-	d.close()
 
 
 def make_arc(text, start, mid, stop, line_width=1.27, layer="F.Cu"):

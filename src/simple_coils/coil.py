@@ -1,4 +1,4 @@
-from coil_util import *
+from simple_coil_util import *
 
 class Coil:
 

@@ -1,7 +1,7 @@
 '''
 create 9 coils per layer, across 5 Cu layers on the same PCB board
 '''
-from new_coil import * 
+from main import * 
 polygon_names = {
         0: "helical",
         3: "triangular",
@@ -15,6 +15,7 @@ polygon_names = {
 }
 
 if __name__ == '__main__':
+    # (x,y) coordinates for the origins of each coil, respectively, divided by layer
     layer_coordinates = {
     "F.Cu": [(49.53, 49.53), (0, 49.53), (-49.53, 49.53), (0, 0), (49.53, 0), (-49.53, 0), (49.53, -49.53), (0, -49.53), (-49.53, -49.53)],
     "In1.Cu": [(-33.02, 49.53), (16.51, 49.53), (-33.02, 0), (16.51, 0), (-33.02, -49.53), (16.51, -49.53)],
@@ -23,23 +24,29 @@ if __name__ == '__main__':
     "In4.Cu": [(16.51, 33.02), (49.53, 33.02), (16.51, -16.51), (49.53, -16.51)]
     }
 
-    turnsTotal = 91
-    vertices = 4
-    outer = 47240
-    w = 127
-    g = 127
+    # TODO: adjust these parameters as needed
+    turnsTotal = 91 # number of turns
+    vertices = 8 # number of vertices of the polygon -> 8 = octagon
+    outer = 47240 # diameter of the coil in micrometers
+    w = 127 # track width in micrometers
+    g = 127 # track spacing in micrometers
+    via_drill = 150 # via diameter in micrometers
+    via_outer = 250 # via drill in micrometers
+    # end of parameters
 
+    # plot magnetic field of a single coil with the specified parameters
+    main(0, outer, 100, turnsTotal, w, g, via_drill, True, vertices, 0, 0, "F.Cu", coil_only=False, via_outer=via_outer, no_plots=False)
+
+    # create layout with 9 such coils per layer
     moduleName = f"results/{turnsTotal}_turn_{polygon_names.get(vertices, f'{vertices}-gon')}_inductor"
     outputFileName = moduleName + ".kicad_pcb" 
-
     fd = open(outputFileName, 'w')
     print(outputFileName)
     fd.write(initialize_file())
     fd.close()
-    
     for layer, coordinates in layer_coordinates.items():
         for coordinate in coordinates:
-            main(0, outer, 100, turnsTotal, w, g, 0.5, True, vertices, coordinate[0], coordinate[1], layer, coil_only=True)
+            main(0, outer, 100, turnsTotal, w, g, via_drill, True, vertices, coordinate[0], coordinate[1], layer, coil_only=True, via_outer=via_outer, no_plots=True)
     fd = open(outputFileName, 'a')
     fd.write(")")
     fd.close()

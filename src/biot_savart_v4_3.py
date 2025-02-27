@@ -10,7 +10,6 @@ https://github.com/vuthalab/biot-savart
 
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.cm as cm
 import matplotlib.ticker as ticker
 
